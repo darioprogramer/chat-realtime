@@ -1,7 +1,17 @@
 const socket = io(); // conecta con el servidor
 
-// pedir nombre de usuario temporal
-let username = prompt("Ingresa tu nombre de usuario:");
+// pedir nombre de usuario temporal (obligatorio)
+let username = "";
+
+while (!username) {
+  username = prompt("Ingresa tu nombre de usuario:");
+  if (username === null || username.trim() === "") {
+    alert("Debes ingresar un nombre para entrar al chat.");
+    username = ""; // fuerza a repetir el prompt
+  } else {
+    username = username.trim();
+  }
+}
 
 // elementos del DOM
 const input = document.getElementById("input");
@@ -19,7 +29,10 @@ send.onclick = () => {
 // Recibir mensajes en tiempo real
 socket.on("chat message", (msg) => {
   const div = document.createElement("div");
-  div.className = "msg other";
+
+  // si el mensaje es mío, uso clase "mine", si es de otro "other"
+  div.className = msg.user === username ? "msg mine" : "msg other";
+
   div.innerHTML = `
     <span class="username">${msg.user}</span><br>
     <span class="text">${msg.text}</span>
