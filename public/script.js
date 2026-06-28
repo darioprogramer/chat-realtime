@@ -68,14 +68,14 @@ socket.on("chat message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Recibir mensajes de voz
+// Recibir mensajes de voz con estilo visual
 socket.on("voice message", (msg) => {
   const div = document.createElement("div");
-  div.className = msg.user === username ? "msg mine" : "msg other";
+  div.className = `voice-message ${msg.user === username ? "mine" : "other"}`;
   const audioBlob = new Blob([msg.audio], { type: "audio/webm" });
   const audioURL = URL.createObjectURL(audioBlob);
   div.innerHTML = `
-    <span class="username" style="color:${msg.color}">${msg.user}</span><br>
+    <span class="username" style="color:${msg.color}">${msg.user}</span>
     <audio controls src="${audioURL}"></audio>
   `;
   messages.appendChild(div);

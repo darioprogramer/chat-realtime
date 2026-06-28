@@ -1,8 +1,8 @@
-*{margin: 0;
-padding: 0;
-box-sizing: border-box;}
-
-
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 body {
   font-family: Arial, sans-serif;
@@ -12,7 +12,6 @@ body {
   height: 100vh;
   width: 100vw;
   display: flex;
-
   justify-content: center;
   align-items: center;
 }
@@ -21,7 +20,7 @@ body {
 #chat {
   width: 400px;
   height: 500px;
-    background-image: url(images/cover.webp);
+  background-image: url(images/cover.webp);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -101,7 +100,7 @@ h2 {
   border: none;
   padding: 10px;
   cursor: pointer;
-  transition: background 2s , color 2s;
+  transition: background 0.3s, color 0.3s;
 }
 
 #send:hover {
@@ -110,54 +109,88 @@ h2 {
 }
 
 .Label1 {
-margin-left: 1vw;
-color : rgb(0, 250, 54);
-text-shadow:0px 0px 3px #001109;
-animation: 5s Label1 infinite;
+  margin-left: 1vw;
+  color: rgb(0, 250, 54);
+  text-shadow: 0px 0px 3px #001109;
+  animation: 5s Label1 infinite;
 }
 
-@keyframes Label1{
-  0%{margin-left: 1vw;
-color : rgb(0, 255, 55);
-text-shadow:0px 0px 3px #001109;}
-  50%{margin-left: 1vw;
-color : rgb(0, 53, 7);
-text-shadow:0px 0px 3px rgb(0, 250, 54)}
-  100%{margin-left: 1vw;
-color : rgb(0, 250, 54);
-text-shadow:0px 0px 3px #001109;}
+@keyframes Label1 {
+  0% {
+    color: rgb(0, 255, 55);
+    text-shadow: 0px 0px 3px #001109;
+  }
+  50% {
+    color: rgb(0, 53, 7);
+    text-shadow: 0px 0px 3px rgb(0, 250, 54);
+  }
+  100% {
+    color: rgb(0, 250, 54);
+    text-shadow: 0px 0px 3px #001109;
+  }
 }
 
-
-#userSelect{
-  background-color:rgb(200, 255, 178) ;
- 
-}
-#userSelect:focus{
-   box-shadow: 0px 0px 3px #51ff00ef;
+#userSelect {
+  background-color: rgb(200, 255, 178);
 }
 
+#userSelect:focus {
+  box-shadow: 0px 0px 3px #51ff00ef;
+}
+
+/* 🎤 Estilo para mensajes de voz */
+.voice-message {
+  display: flex;
+  align-items: center;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  max-width: 80%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.voice-message.mine {
+  background: #dcf8c6;
+  margin-left: auto;
+}
+
+.voice-message.other {
+  background: #fff;
+  margin-right: auto;
+}
+
+.voice-message .username {
+  font-weight: bold;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.voice-message audio {
+  width: 100%;
+  max-width: 250px;
+  outline: none;
+  border-radius: 8px;
+}
 
 /* 🔑 Adaptación para móviles */
-@media(max-width: 500px) {
+@media (max-width: 500px) {
   body {
-    background: #fff;       /* fondo blanco */
+    background: #fff;
     margin: 0;
     padding: 0;
-    display: block;         /* quitar flexbox */
+    display: block;
     height: 100vh;
     width: 100vw;
-
   }
 
   #chat {
-    width: 100vw;           /* ocupa todo el ancho */
-    height: 100vh;          /* ocupa toda la altura */
-    border-radius: 0;       /* sin bordes redondeados */
-    margin: none;
-    box-shadow: none;       /* sin sombra */
-    margin: 0;              /* sin márgenes */
-
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
   }
 
   h2 {
@@ -177,5 +210,13 @@ text-shadow:0px 0px 3px #001109;}
   #send {
     font-size: 14px;
     padding: 8px;
+  }
+
+  .voice-message {
+    max-width: 95%; /* más ancho en móvil */
+  }
+
+  .voice-message audio {
+    max-width: 100%; /* ocupa todo el ancho disponible */
   }
 }
