@@ -1,3 +1,9 @@
+*{margin: 0;
+padding: 0;
+box-sizing: border-box;}
+
+
+
 body {
   font-family: Arial, sans-serif;
   background: #ece5dd;
@@ -6,6 +12,7 @@ body {
   height: 100vh;
   width: 100vw;
   display: flex;
+
   justify-content: center;
   align-items: center;
 }
@@ -91,7 +98,7 @@ h2 {
 }
 
 /* 🔑 Adaptación para móviles */
-@media (max-width: 600px) {
+@media(max-width: 500px) {
   body {
     background: #fff;       /* fondo blanco */
     margin: 0;
@@ -99,12 +106,14 @@ h2 {
     display: block;         /* quitar flexbox */
     height: 100vh;
     width: 100vw;
+
   }
 
   #chat {
     width: 100vw;           /* ocupa todo el ancho */
     height: 100vh;          /* ocupa toda la altura */
     border-radius: 0;       /* sin bordes redondeados */
+    margin: none;
     box-shadow: none;       /* sin sombra */
     margin: 0;              /* sin márgenes */
 
