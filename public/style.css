@@ -1,3 +1,4 @@
+/* estilo adaptado a tu versión original (beige + verde) */
 * {
   margin: 0;
   padding: 0;
@@ -71,7 +72,7 @@ h2 {
   border-top: 1px solid #ddd;
   padding: 5px;
   gap: 5px;
-  align-items: stretch; /* todos los hijos igual de altos */
+  align-items: stretch;
 }
 
 #input {
@@ -85,7 +86,6 @@ h2 {
 
 /* Botones compactos con misma altura que textarea */
 #send, #record, #imageButton {
-
   background: #25d366;
   border: none;
   cursor: pointer;
@@ -106,13 +106,10 @@ h2 {
 #send svg, #record svg, #imageButton svg {
   width: 20px;
   height: 20px;
-
 }
 
 /* Input de imagen oculto */
-#imageInput {
-  display: none; oculta el input real
-}
+#imageInput { display: none; }
 
 /* Label animada */
 .Label1 {

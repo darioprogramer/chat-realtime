@@ -1,5 +1,5 @@
-// script.js
-const socket = io(); // conecta con el servidor
+// script.js (base64 para imagen y audio, mantiene colores y clases)
+const socket = io();
 
 // pedir nombre de usuario obligatorio
 let username = "";
@@ -13,10 +13,8 @@ while (!username) {
   }
 }
 
-// enviar nombre al servidor
 socket.emit("set username", username);
 
-// elementos del DOM
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const record = document.getElementById("record");
@@ -24,24 +22,20 @@ const imageInput = document.getElementById("imageInput");
 const messages = document.getElementById("messages");
 const userSelect = document.getElementById("userSelect");
 
-// helper: añadir mensaje al DOM
-function appendMessage(html, scroll = true) {
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  messages.appendChild(div);
-  if (scroll) messages.scrollTop = messages.scrollHeight;
+function appendElement(el) {
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
 }
 
-// Enviar mensaje de texto
+// Enviar texto
 send.onclick = () => {
   const text = input.value.trim();
-  if (text) {
-    socket.emit("chat message", { text });
-    input.value = "";
-  }
+  if (!text) return;
+  socket.emit("chat message", { text });
+  input.value = "";
 };
 
-// Enviar con Ctrl+Enter o Enter (Enter = enviar)
+// Enter para enviar (sin Shift)
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -49,7 +43,7 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-// 🎤 grabar audio (base64)
+// Grabar audio (base64)
 let mediaRecorder;
 let audioChunks = [];
 
@@ -66,10 +60,8 @@ record.onclick = async () => {
         const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
         const reader = new FileReader();
         reader.onload = () => {
-          // enviar base64
           socket.emit("voice message", { audio: reader.result });
         };
-        reader.onerror = (err) => console.error("FileReader audio error:", err);
         reader.readAsDataURL(audioBlob);
       };
       mediaRecorder.start();
@@ -79,94 +71,89 @@ record.onclick = async () => {
       record.textContent = "🎤";
     }
   } catch (err) {
-    console.error("Error al acceder al micrófono:", err);
+    console.error("Mic error:", err);
     alert("No se pudo acceder al micrófono.");
   }
 };
 
-// 📷 enviar imagen (base64)
+// Enviar imagen (base64)
 imageInput.onchange = () => {
   const file = imageInput.files[0];
   if (!file) return;
-  // opcional: limitar tamaño razonable en cliente (ej. 8MB)
   const maxSize = 8 * 1024 * 1024;
   if (file.size > maxSize) {
     alert("La imagen es demasiado grande. Máx 8 MB.");
     imageInput.value = "";
     return;
   }
-
   const reader = new FileReader();
   reader.onload = () => {
-    // enviar base64 tal cual
     socket.emit("image message", { image: reader.result });
-    imageInput.value = ""; // limpiar input para permitir reenvío
-  };
-  reader.onerror = (err) => {
-    console.error("FileReader image error:", err);
     imageInput.value = "";
   };
   reader.readAsDataURL(file);
 };
 
-// Recibir mensajes de texto
+// Recibir texto
 socket.on("chat message", (msg) => {
-  const isMine = msg.user === username;
-  const html = `
-    <div class="msg ${isMine ? "mine" : "other"}">
-      <span class="username" style="color:${msg.color || "#fff"}">${msg.user || "Anon"}</span>
-      <span class="text">${escapeHtml(msg.text || "")}</span>
-    </div>
-  `;
-  appendMessage(html);
+  const el = document.createElement("div");
+  el.className = `msg ${msg.user === username ? "mine" : "other"}`;
+  const name = document.createElement("span");
+  name.className = "username";
+  if (msg.color) name.style.color = msg.color;
+  name.textContent = msg.user || "Anon";
+  const text = document.createElement("div");
+  text.className = "text";
+  text.textContent = msg.text || "";
+  el.appendChild(name);
+  el.appendChild(text);
+  appendElement(el);
 });
 
-// Recibir mensajes de voz (base64)
+// Recibir audio
 socket.on("voice message", (msg) => {
-  const isMine = msg.user === username;
-  const html = `
-    <div class="msg ${isMine ? "mine" : "other"}">
-      <span class="username" style="color:${msg.color || "#fff"}">${msg.user || "Anon"}</span>
-      <audio controls src="${msg.audio}"></audio>
-    </div>
-  `;
-  appendMessage(html);
+  const el = document.createElement("div");
+  el.className = `voice-message ${msg.user === username ? "mine" : "other"}`;
+  const name = document.createElement("div");
+  name.className = "username";
+  if (msg.color) name.style.color = msg.color;
+  name.textContent = msg.user || "Anon";
+  const audio = document.createElement("audio");
+  audio.controls = true;
+  audio.src = msg.audio;
+  el.appendChild(name);
+  el.appendChild(audio);
+  appendElement(el);
 });
 
-// Recibir mensajes de imagen (base64)
+// Recibir imagen
 socket.on("image message", (msg) => {
-  const isMine = msg.user === username;
-  const html = `
-    <div class="msg ${isMine ? "mine" : "other"}">
-      <span class="username" style="color:${msg.color || "#fff"}">${msg.user || "Anon"}</span>
-      <img src="${msg.image}" alt="imagen" class="chat-image">
-    </div>
-  `;
-  appendMessage(html);
+  const el = document.createElement("div");
+  el.className = `image-message ${msg.user === username ? "mine" : "other"}`;
+  const name = document.createElement("div");
+  name.className = "username";
+  if (msg.color) name.style.color = msg.color;
+  name.textContent = msg.user || "Anon";
+  const img = document.createElement("img");
+  img.className = "chat-image";
+  img.src = msg.image;
+  img.alt = "imagen";
+  el.appendChild(name);
+  el.appendChild(img);
+  appendElement(el);
 });
 
-// actualizar lista de usuarios conectados
+// Lista de usuarios
 socket.on("user list", (users) => {
   userSelect.innerHTML = "";
-  users.forEach((u) => {
-    const option = document.createElement("option");
-    option.textContent = u.name;
-    option.style.color = u.color || "#fff";
-    userSelect.appendChild(option);
+  users.forEach(u => {
+    const opt = document.createElement("option");
+    opt.textContent = u.name;
+    opt.style.color = u.color || "#000";
+    userSelect.appendChild(opt);
   });
 });
 
-// util: escapar HTML en texto
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-// logs para depuración
-socket.on("connect", () => console.log("Socket conectado:", socket.id));
-socket.on("disconnect", (reason) => console.log("Socket desconectado:", reason));
-socket.on("connect_error", (err) => console.error("connect_error:", err));
+// logs
+socket.on("connect", () => console.log("Conectado:", socket.id));
+socket.on("disconnect", (r) => console.log("Desconectado:", r));

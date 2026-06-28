@@ -5,21 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat Web</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    /* Estilos mínimos para que se vea bien al probar */
-    body { font-family: Arial, sans-serif; background:#222; color:#fff; margin:0; padding:20px; }
-    #chat { max-width:800px; margin:0 auto; background:#2b2b2b; padding:16px; border-radius:8px; }
-    #messages { height:360px; overflow:auto; background:#1f1f1f; padding:12px; border-radius:6px; margin:12px 0; }
-    .msg { margin-bottom:10px; padding:6px; border-radius:6px; }
-    .mine { background:#0b6; color:#000; }
-    .other { background:#444; }
-    .username { font-weight:700; display:block; margin-bottom:4px; }
-    .chat-image { max-width:240px; display:block; margin-top:6px; border-radius:6px; }
-    #form { display:flex; gap:8px; align-items:center; }
-    textarea#input { flex:1; height:56px; resize:none; padding:8px; border-radius:6px; border:1px solid #444; background:#111; color:#fff; }
-    button, label#imageButton { background:#3a3a3a; border:none; padding:8px 10px; border-radius:6px; cursor:pointer; }
-    select#userSelect { background:#111; color:#fff; border:1px solid #444; padding:6px; border-radius:6px; }
-  </style>
 </head>
 <body>
   <div id="chat">
@@ -33,21 +18,27 @@
       <textarea id="input" placeholder="Escribe un mensaje..."></textarea>
 
       <button id="send" title="Enviar" aria-label="Enviar">
-        Enviar
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.5 12H5.42M5.25 12.8L4.24 15.8C3.69 17.44 3.42 18.26 3.61 18.77C3.79 19.21 4.15 19.54 4.61 19.67C5.13 19.82 5.92 19.46 7.5 18.75L17.64 14.19C19.18 13.49 19.95 13.15 20.19 12.66C20.40 12.25 20.40 11.75 20.19 11.34C19.95 10.85 19.18 10.51 17.64 9.81L7.48 5.24C5.91 4.53 5.12 4.18 4.60 4.32C4.14 4.45 3.78 4.78 3.60 5.22C3.41 5.73 3.68 6.55 4.22 8.19L5.25 11.28C5.34 11.56 5.39 11.70 5.41 11.85C5.42 11.97 5.42 12.10 5.41 12.23C5.39 12.38 5.34 12.52 5.25 12.80Z" 
+                stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </button>
 
       <button id="record" title="Grabar" aria-label="Grabar">
-        🎤
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM13.2631 11.7368C13.2631 12.6105 12.5578 13.3158 11.6842 13.3158C10.8105 13.3158 10.1052 12.6105 10.1052 11.7368V8.57895C10.1052 7.70526 10.8105 7 11.6842 7C12.5578 7 13.2631 7.70526 13.2631 8.57895V11.7368ZM11.6842 8.05265C11.3947 8.05265 11.1579 8.28949 11.1579 8.57897V11.7369C11.1579 12.0263 11.3947 12.2632 11.6842 12.2632C11.9789 12.2632 12.2105 12.0316 12.2105 11.7369V8.57897C12.2105 8.28949 11.9736 8.05265 11.6842 8.05265ZM15.3684 11.7368H14.4737C14.4737 13.3158 13.1368 14.421 11.6842 14.421C10.2316 14.421 8.89474 13.3158 8.89474 11.7368H8C8 13.5316 9.43158 15.0158 11.1579 15.2737V17H12.2105V15.2737C13.9368 15.0158 15.3684 13.5316 15.3684 11.7368Z" fill="white"/>
+        </svg>
       </button>
 
-      <label for="imageInput" id="imageButton" title="Enviar imagen" style="display:inline-block; cursor:pointer;">
-        📷
+      <label for="imageInput" id="imageButton" title="Enviar imagen" aria-label="Enviar imagen">
+        <svg viewBox="0 0 32 32" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+          <path d="M392,129 C392,130.104 391.104,131 390,131 L384.832,131 L377.464,123.535 L386,114.999 L392,120.999 L392,129 L392,129 Z M366,131 C364.896,131 364,130.104 364,129 L364,128.061 L371.945,120.945 L382.001,131 L366,131 L366,131 Z M370,105 C372.209,105 374,106.791 374,109 C374,111.209 372.209,113 370,113 C367.791,113 366,111.209 366,109 C366,106.791 367.791,105 370,105 L370,105 Z M390,101 L366,101 C363.791,101 362,102.791 362,105 L362,129 C362,131.209 363.791,133 366,133 L390,133 C392.209,133 394,131.209 394,129 L394,105 C394,102.791 392.209,101 390,101 L390,101 Z M370,111 C371.104,111 372,110.104 372,109 C372,107.896 371.104,107 370,107 C368.896,107 368,107.896 368,109 C368,110.104 368.896,111 370,111 L370,111 Z" fill="white"/>
+        </svg>
       </label>
       <input type="file" id="imageInput" accept="image/*" hidden>
     </div>
   </div>
 
-  <!-- Cliente de Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>
