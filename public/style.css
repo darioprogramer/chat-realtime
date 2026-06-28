@@ -1,0 +1,76 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #ece5dd;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#chat {
+  width: 400px;
+  height: 500px;              /* 🔑 altura fija del chat */
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+h2 {
+  background: #075e54;
+  color: white;
+  margin: 0;
+  padding: 10px;
+  text-align: center;
+}
+
+#messages {
+  flex: 1;                     /* ocupa todo el espacio disponible */
+  overflow-y: auto;            /* scroll interno */
+  padding: 10px;
+  background: #f0f0f0;
+}
+
+.msg {
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 5px;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+.mine {
+  background: #dcf8c6;
+  margin-left: auto;
+}
+
+.other {
+  background: #fff;
+  margin-right: auto;
+}
+
+#form {
+  display: flex;
+  border-top: 1px solid #ddd;
+}
+
+#input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  resize: none;
+  min-height: 40px;
+  max-height: 100px;           /* 🔑 límite de altura */
+  overflow-y: auto;            /* scroll interno si se escribe demasiado */
+  font-family: inherit;
+}
+
+#send {
+  background: #25d366;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+}
