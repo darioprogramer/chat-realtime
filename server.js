@@ -33,6 +33,7 @@ io.on("connection", (socket) => {
   console.log("Un usuario se conectó:", socket.id);
 
   socket.on("set username", (username) => {
+    // si ya existe otro socket con ese nombre, reemplazamos mapping
     users[socket.id] = { name: username, color: randomColor() };
     usersByName[username] = socket.id;
     io.emit("user list", Object.values(users));
@@ -61,8 +62,8 @@ io.on("connection", (socket) => {
     const fromUser = users[socket.id];
     const toSocketId = usersByName[to];
     if (fromUser && toSocketId) {
+      // enviar solo al destinatario; no reenviamos la misma estructura al remitente
       io.to(toSocketId).emit("private message", { from: fromUser.name, text, color: fromUser.color });
-      socket.emit("private message", { from: fromUser.name, text, color: fromUser.color });
     }
   });
 
@@ -72,7 +73,6 @@ io.on("connection", (socket) => {
     const toSocketId = usersByName[to];
     if (fromUser && toSocketId) {
       io.to(toSocketId).emit("private voice", { from: fromUser.name, audio, color: fromUser.color });
-      socket.emit("private voice", { from: fromUser.name, audio, color: fromUser.color });
     }
   });
 
@@ -82,7 +82,6 @@ io.on("connection", (socket) => {
     const toSocketId = usersByName[to];
     if (fromUser && toSocketId) {
       io.to(toSocketId).emit("private image", { from: fromUser.name, image, color: fromUser.color });
-      socket.emit("private image", { from: fromUser.name, image, color: fromUser.color });
     }
   });
 

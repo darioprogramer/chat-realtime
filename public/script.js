@@ -18,15 +18,18 @@ socket.emit("set username", username);
 // DOM
 const app = document.getElementById("app");
 const sidebarToggle = document.getElementById("sidebarToggle");
+const backToChats = document.getElementById("backToChats");
 const searchUser = document.getElementById("searchUser");
 const chatList = document.getElementById("chatList");
 const chatTitle = document.getElementById("chatTitle");
+const chatParticipants = document.getElementById("chatParticipants");
 const messages = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const record = document.getElementById("record");
 const imageInput = document.getElementById("imageInput");
 const userSelect = document.getElementById("userSelect");
+const currentUserSpan = document.getElementById("currentUser");
 
 // estado local
 let usersOnline = {}; // name -> { name, color }
@@ -46,6 +49,18 @@ function escapeHtml(str) {
 function appendElement(el) {
   messages.appendChild(el);
   messages.scrollTop = messages.scrollHeight;
+}
+
+function renderParticipants(name) {
+  if (name === "Global") {
+    const count = Object.keys(usersOnline).length;
+    chatParticipants.textContent = `${count} online`;
+  } else {
+    const other = name;
+    const otherOnline = usersOnline[other] ? "●" : "○";
+    const meOnline = usersOnline[username] ? "●" : "○";
+    chatParticipants.textContent = `${username} ${meOnline} · ${other} ${otherOnline}`;
+  }
 }
 
 function renderMessages() {
@@ -94,10 +109,12 @@ function renderMessages() {
     appendElement(el);
   });
   chatTitle.textContent = activeChat === "Global" ? "Chat Global" : activeChat;
+  renderParticipants(activeChat);
 }
 
 // administrar lista de chats en sidebar
 function addChatToList(name) {
+  if (name === username) return; // no crear chat contigo mismo
   if (document.querySelector(`#chatList li[data-chat="${CSS.escape(name)}"]`)) return;
   const li = document.createElement("li");
   li.className = "chat-item";
@@ -115,14 +132,20 @@ function openChat(name) {
   const li = document.querySelector(`#chatList li[data-chat="${CSS.escape(name)}"]`);
   if (li) li.classList.add("active");
   renderMessages();
-  // on mobile hide sidebar
-  if (window.innerWidth <= 700) app.classList.remove("show-sidebar");
+  // on mobile hide sidebar and show chatWindow
+  if (window.innerWidth <= 700) {
+    app.classList.remove("show-sidebar");
+    // ensure chatWindow visible (CSS hides it when show-sidebar present)
+    const chatWindow = document.getElementById("chatWindow");
+    if (chatWindow) chatWindow.style.display = "flex";
+  }
 }
 
 // actualizar select de usuarios online
 function refreshUserSelect() {
-  userSelect.innerHTML = "";
+  userSelect.innerHTML = '<option value="">Selecciona un usuario</option>';
   Object.values(usersOnline).forEach(u => {
+    if (u.name === username) return;
     const opt = document.createElement("option");
     opt.value = u.name;
     opt.textContent = u.name;
@@ -132,13 +155,36 @@ function refreshUserSelect() {
 }
 
 // eventos UI
+// show sidebar on mobile at start (ensures only chat list visible)
+function ensureMobileStart() {
+  const chatWindow = document.getElementById("chatWindow");
+  if (window.innerWidth <= 700) {
+    app.classList.add("show-sidebar");
+    if (chatWindow) chatWindow.style.display = "none";
+  } else {
+    app.classList.remove("show-sidebar");
+    if (chatWindow) chatWindow.style.display = "flex";
+  }
+}
+ensureMobileStart();
+window.addEventListener("resize", ensureMobileStart);
+
 sidebarToggle && sidebarToggle.addEventListener("click", () => {
   app.classList.toggle("show-sidebar");
+  // toggle chatWindow display accordingly
+  const chatWindow = document.getElementById("chatWindow");
+  if (app.classList.contains("show-sidebar")) {
+    if (chatWindow) chatWindow.style.display = "none";
+  } else {
+    if (chatWindow) chatWindow.style.display = "flex";
+  }
 });
 
-chatList.addEventListener("click", (e) => {
-  const li = e.target.closest("li[data-chat]");
-  if (li) openChat(li.dataset.chat);
+backToChats && backToChats.addEventListener("click", () => {
+  // show sidebar to go back and hide chatWindow on mobile
+  app.classList.add("show-sidebar");
+  const chatWindow = document.getElementById("chatWindow");
+  if (chatWindow && window.innerWidth <= 700) chatWindow.style.display = "none";
 });
 
 // buscar / crear chat con Enter
@@ -174,10 +220,16 @@ send.addEventListener("click", () => {
   if (!text) return;
   if (activeChat === "Global") {
     socket.emit("chat message", { text });
+    // optimista: add local copy
+    const entry = { user: username, text, color: usersOnline[username]?.color, timestamp: Date.now() };
+    chats.Global.push(entry);
+    if (activeChat === "Global") renderMessages();
   } else {
+    // enviar privado: servidor enviará solo al destinatario
     socket.emit("private message", { to: activeChat, text });
-    // optimista: añadir copia local
+    // añadir copia local en chat destino (optimista)
     const msg = { from: username, text, color: usersOnline[username]?.color, timestamp: Date.now() };
+    if (!chats[activeChat]) chats[activeChat] = [];
     chats[activeChat].push(msg);
     renderMessages();
   }
@@ -211,9 +263,13 @@ record.addEventListener("click", async () => {
         reader.onload = () => {
           if (activeChat === "Global") {
             socket.emit("voice message", { audio: reader.result });
+            const entry = { user: username, type: "voice", audio: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
+            chats.Global.push(entry);
+            if (activeChat === "Global") renderMessages();
           } else {
             socket.emit("private voice", { to: activeChat, audio: reader.result });
             const msg = { from: username, type: "voice", audio: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
+            if (!chats[activeChat]) chats[activeChat] = [];
             chats[activeChat].push(msg);
             renderMessages();
           }
@@ -246,9 +302,13 @@ imageInput.addEventListener("change", () => {
   reader.onload = () => {
     if (activeChat === "Global") {
       socket.emit("image message", { image: reader.result });
+      const entry = { user: username, type: "image", image: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
+      chats.Global.push(entry);
+      if (activeChat === "Global") renderMessages();
     } else {
       socket.emit("private image", { to: activeChat, image: reader.result });
       const msg = { from: username, type: "image", image: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
+      if (!chats[activeChat]) chats[activeChat] = [];
       chats[activeChat].push(msg);
       renderMessages();
     }
@@ -269,11 +329,28 @@ socket.on("user list", (list) => {
   Object.keys(chats).forEach(name => {
     if (name !== "Global") addChatToList(name);
   });
+
+  // actualizar participantes si estás en un chat privado
+  renderParticipants(activeChat);
 });
+
+// actualizar select de usuarios online
+function refreshUserSelect() {
+  userSelect.innerHTML = '<option value="">Selecciona un usuario</option>';
+  Object.values(usersOnline).forEach(u => {
+    if (u.name === username) return;
+    const opt = document.createElement("option");
+    opt.value = u.name;
+    opt.textContent = u.name;
+    opt.style.color = u.color || "#000";
+    userSelect.appendChild(opt);
+  });
+}
 
 // mensaje global
 socket.on("chat message", (msg) => {
   const entry = { user: msg.user, text: msg.text, color: msg.color, timestamp: Date.now() };
+  if (!chats.Global) chats.Global = [];
   chats.Global.push(entry);
   if (activeChat === "Global") renderMessages();
 });
@@ -281,6 +358,7 @@ socket.on("chat message", (msg) => {
 // voz global
 socket.on("voice message", (msg) => {
   const entry = { user: msg.user, type: "voice", audio: msg.audio, color: msg.color, timestamp: Date.now() };
+  if (!chats.Global) chats.Global = [];
   chats.Global.push(entry);
   if (activeChat === "Global") renderMessages();
 });
@@ -288,6 +366,7 @@ socket.on("voice message", (msg) => {
 // imagen global
 socket.on("image message", (msg) => {
   const entry = { user: msg.user, type: "image", image: msg.image, color: msg.color, timestamp: Date.now() };
+  if (!chats.Global) chats.Global = [];
   chats.Global.push(entry);
   if (activeChat === "Global") renderMessages();
 });
@@ -295,6 +374,7 @@ socket.on("image message", (msg) => {
 // mensaje privado (recibido)
 socket.on("private message", (msg) => {
   const from = msg.from;
+  if (from === username) return; // seguridad: no duplicar si por alguna razón llega tu propio nombre
   if (!chats[from]) {
     chats[from] = [];
     addChatToList(from);
@@ -307,6 +387,7 @@ socket.on("private message", (msg) => {
 // voz privada
 socket.on("private voice", (msg) => {
   const from = msg.from;
+  if (from === username) return;
   if (!chats[from]) {
     chats[from] = [];
     addChatToList(from);
@@ -319,6 +400,7 @@ socket.on("private voice", (msg) => {
 // imagen privada
 socket.on("private image", (msg) => {
   const from = msg.from;
+  if (from === username) return;
   if (!chats[from]) {
     chats[from] = [];
     addChatToList(from);
@@ -331,8 +413,7 @@ socket.on("private image", (msg) => {
 // conexión
 socket.on("connect", () => {
   console.log("Socket conectado:", socket.id);
-  const currentUser = document.getElementById("currentUser");
-  if (currentUser) currentUser.textContent = username;
+  if (currentUserSpan) currentUserSpan.textContent = username;
 });
 
 // desconexión

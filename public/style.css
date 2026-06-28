@@ -138,8 +138,24 @@ body {
   padding: 12px 16px;
 }
 
+.left-header { display:flex; align-items:center; gap:12px; }
+.back-btn {
+  display:none;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  border-radius:8px;
+  border:none;
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+  cursor:pointer;
+}
 #chatTitle { font-size: 18px; margin:0; }
 .header-actions { display:flex; gap:8px; align-items:center; }
+
+/* Participants */
+.chat-participants { font-size:13px; opacity:0.95; color:#fff; }
 
 /* Messages area */
 #messages {
@@ -244,14 +260,17 @@ body {
   #messages { padding: 12px; }
 }
 
+/* Mobile behavior: show sidebar by default; hide chatWindow while sidebar visible */
 @media (max-width: 700px) {
-  /* On small screens hide sidebar by default; JS toggles class "show-sidebar" on #app to reveal it */
   #sidebar { position: absolute; left: -100%; top: 0; bottom: 0; z-index: 30; width: 78%; max-width: 320px; transition: left .22s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
   #app.show-sidebar #sidebar { left: 0; }
+  #app.show-sidebar #chatWindow { display: none; }
+  #app:not(.show-sidebar) #sidebar { left: -100%; }
   #chatWindow { flex:1; }
   #chatHeader { padding: 10px; }
   #input { min-height:44px; }
   #send, #record, #imageButton { width:40px; height:40px; }
+  .back-btn { display:inline-flex; }
 }
 
 /* Accessibility focus */

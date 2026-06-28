@@ -18,7 +18,9 @@
       <div class="sidebar-controls">
         <input id="searchUser" type="text" placeholder="Buscar usuario o crear chat..." aria-label="Buscar usuario">
         <label for="userSelect" class="label-online">Usuarios conectados</label>
-        <select id="userSelect" aria-label="Usuarios conectados"></select>
+        <select id="userSelect" aria-label="Usuarios conectados">
+          <option value="">Selecciona un usuario</option>
+        </select>
       </div>
 
       <ul id="chatList" role="list" aria-label="Lista de conversaciones">
@@ -29,8 +31,12 @@
     <!-- Ventana principal de conversación -->
     <main id="chatWindow" role="main">
       <header id="chatHeader">
-        <h2 id="chatTitle">Chat Global</h2>
+        <div class="left-header">
+          <button id="backToChats" class="back-btn" aria-label="Volver a chats">←</button>
+          <h2 id="chatTitle">Chat Global</h2>
+        </div>
         <div class="header-actions">
+          <div id="chatParticipants" class="chat-participants" aria-hidden="true"></div>
           <span id="currentUser" class="current-user" aria-hidden="true"></span>
         </div>
       </header>
