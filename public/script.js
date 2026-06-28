@@ -18,10 +18,11 @@ socket.emit("set username", username);
 // elementos del DOM
 const input = document.getElementById("input");
 const send = document.getElementById("send");
+const record = document.getElementById("record");
 const messages = document.getElementById("messages");
 const userSelect = document.getElementById("userSelect"); // desplegable
 
-// Enviar mensaje al servidor
+// Enviar mensaje de texto
 send.onclick = () => {
   if (input.value.trim()) {
     socket.emit("chat message", { user: username, text: input.value.trim() });
@@ -29,13 +30,53 @@ send.onclick = () => {
   }
 };
 
-// Recibir mensajes en tiempo real
+// 🎤 grabar audio
+let mediaRecorder;
+let audioChunks = [];
+
+record.onclick = async () => {
+  if (!mediaRecorder || mediaRecorder.state === "inactive") {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      audioChunks = [];
+      const reader = new FileReader();
+      reader.onload = () => {
+        socket.emit("voice message", { user: username, audio: reader.result });
+      };
+      reader.readAsArrayBuffer(audioBlob);
+    };
+    mediaRecorder.start();
+    record.textContent = "⏹️"; // botón cambia a stop
+  } else {
+    mediaRecorder.stop();
+    record.textContent = "🎤"; // vuelve a micrófono
+  }
+};
+
+// Recibir mensajes de texto
 socket.on("chat message", (msg) => {
   const div = document.createElement("div");
   div.className = msg.user === username ? "msg mine" : "msg other";
   div.innerHTML = `
     <span class="username" style="color:${msg.color}">${msg.user}</span><br>
     <span class="text">${msg.text}</span>
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+// Recibir mensajes de voz
+socket.on("voice message", (msg) => {
+  const div = document.createElement("div");
+  div.className = msg.user === username ? "msg mine" : "msg other";
+  const audioBlob = new Blob([msg.audio], { type: "audio/webm" });
+  const audioURL = URL.createObjectURL(audioBlob);
+  div.innerHTML = `
+    <span class="username" style="color:${msg.color}">${msg.user}</span><br>
+    <audio controls src="${audioURL}"></audio>
   `;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;

@@ -17,7 +17,10 @@ let users = {};
 
 // función para generar un color aleatorio
 function randomColor() {
-  const colors = ["rgba(72, 255, 0, 0.94)", "#ffee00ef", "#ff0000ef", "#00fff2ef", "#1100ffef", "#ff00ffef", "#ff4f7bef", "#e1ff5bef","#747474ef"];
+  const colors = [
+    "rgba(107, 180, 79, 0.94)", "#bdb766ef", "#ff0000ef", "#008db1ef",
+    "#1100ffef", "#ff00ffef", "#ff4f7bef", "#a0b34cef", "#747474ef"
+  ];
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
@@ -33,6 +36,14 @@ io.on("connection", (socket) => {
     const userData = users[socket.id];
     if (userData) {
       io.emit("chat message", { user: userData.name, text: msg.text, color: userData.color });
+    }
+  });
+
+  // 🎤 recibir mensajes de voz
+  socket.on("voice message", (msg) => {
+    const userData = users[socket.id];
+    if (userData) {
+      io.emit("voice message", { user: userData.name, audio: msg.audio, color: userData.color });
     }
   });
 
