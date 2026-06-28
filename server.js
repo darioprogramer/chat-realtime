@@ -66,7 +66,6 @@ io.on("connection", (socket) => {
     if (toSocketId) {
       io.to(toSocketId).emit("private message", { from: fromUser.name, text, color: fromUser.color });
     }
-    // confirm to sender
     socket.emit("private message", { to, text, color: fromUser.color, self: true });
   });
 

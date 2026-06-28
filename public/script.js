@@ -1,4 +1,4 @@
-// script.js - imágenes comprimidas cliente, audios robustos, no duplicados
+// script.js - correcciones: teclado móvil no abre sidebar, grabación robusta, compresión imágenes
 const socket = io();
 
 // DOM
@@ -24,6 +24,7 @@ let chats = { Global: [] };
 let activeChat = "Global";
 let connected = false;
 let isProcessingMedia = false;
+let lastWindowWidth = window.innerWidth;
 
 // util
 function escapeHtml(str) {
@@ -124,18 +125,35 @@ function openChat(name) {
 }
 
 // UI events
-function ensureMobileStart() {
+function ensureMobileStart(initial = false) {
   const chatWindow = document.getElementById("chatWindow");
-  if (window.innerWidth <= 700) {
-    app.classList.add("show-sidebar");
-    if (chatWindow) chatWindow.style.display = "none";
-  } else {
-    app.classList.remove("show-sidebar");
-    if (chatWindow) chatWindow.style.display = "flex";
+  const w = window.innerWidth;
+  // On initial load, force sidebar visible on small screens.
+  if (initial) {
+    if (w <= 700) {
+      app.classList.add("show-sidebar");
+      if (chatWindow) chatWindow.style.display = "none";
+    } else {
+      app.classList.remove("show-sidebar");
+      if (chatWindow) chatWindow.style.display = "flex";
+    }
+    lastWindowWidth = w;
+    return;
+  }
+  // On resize, only react if width changed significantly (avoid keyboard resize)
+  if (Math.abs(w - lastWindowWidth) > 80) {
+    if (w <= 700) {
+      app.classList.add("show-sidebar");
+      if (chatWindow) chatWindow.style.display = "none";
+    } else {
+      app.classList.remove("show-sidebar");
+      if (chatWindow) chatWindow.style.display = "flex";
+    }
+    lastWindowWidth = w;
   }
 }
-document.addEventListener("DOMContentLoaded", ensureMobileStart);
-window.addEventListener("resize", ensureMobileStart);
+document.addEventListener("DOMContentLoaded", () => ensureMobileStart(true));
+window.addEventListener("resize", () => ensureMobileStart(false));
 
 sidebarToggle && sidebarToggle.addEventListener("click", () => {
   app.classList.toggle("show-sidebar");
@@ -206,7 +224,6 @@ input.addEventListener("keydown", (e) => {
 
 // --- IMAGE: compress and send ---
 async function compressImageFile(file, maxDim = 1024, quality = 0.75) {
-  // use createImageBitmap for async decode
   const bitmap = await createImageBitmap(file);
   let { width, height } = bitmap;
   const ratio = width / height;
@@ -224,7 +241,6 @@ async function compressImageFile(file, maxDim = 1024, quality = 0.75) {
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(bitmap, 0, 0, width, height);
-  // release bitmap
   bitmap.close && bitmap.close();
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {
@@ -242,20 +258,13 @@ imageInput.addEventListener("change", async () => {
   isProcessingMedia = true;
   disableControls(true);
   try {
-    // limit file size early
-    const maxSizeBytes = 12 * 1024 * 1024; // 12MB original limit
-    if (file.size > maxSizeBytes) {
-      // try compressing; compressImageFile will reduce dimensions/quality
-    }
     const compressedBlob = await compressImageFile(file, 1024, 0.75);
-    // final size check
     const finalMax = 10 * 1024 * 1024;
     if (compressedBlob.size > finalMax) {
       alert("La imagen sigue siendo muy grande después de comprimir. Elige otra más pequeña.");
       imageInput.value = "";
       return;
     }
-    // read as dataURL asynchronously
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result;
@@ -285,6 +294,10 @@ let mediaRecorder;
 let audioChunks = [];
 
 record.addEventListener("click", async () => {
+  if (!connected) {
+    alert("Aún no estás conectado al servidor. Espera un momento e intenta de nuevo.");
+    return;
+  }
   if (isProcessingMedia) return;
   try {
     if (!mediaRecorder || mediaRecorder.state === "inactive") {
@@ -299,7 +312,6 @@ record.addEventListener("click", async () => {
         disableControls(true);
         try {
           const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-          // optional: if you want to limit size, you could transcode or slice
           const reader = new FileReader();
           reader.onload = () => {
             const dataUrl = reader.result;
@@ -326,7 +338,7 @@ record.addEventListener("click", async () => {
     }
   } catch (err) {
     console.error("Mic error:", err);
-    alert("No se pudo acceder al micrófono.");
+    alert("No se pudo acceder al micrófono. Revisa permisos y vuelve a intentarlo.");
   }
 });
 
@@ -338,7 +350,6 @@ function disableControls(disable) {
   searchUser.disabled = disable;
   userSelect.disabled = disable;
   if (disable) {
-    // subtle visual feedback
     send.style.opacity = "0.6";
     record.style.opacity = "0.6";
   } else {
@@ -351,7 +362,6 @@ function disableControls(disable) {
 socket.on("connect", () => {
   connected = true;
   console.log("Socket conectado:", socket.id);
-  // ask username only after connected
   if (!username) {
     while (!username) {
       const n = prompt("Ingresa tu nombre de usuario:");
@@ -413,7 +423,7 @@ socket.on("image message", (msg) => {
   if (activeChat === "Global") renderMessages();
 });
 
-// PRIVATE handlers (recipient and sender confirmation)
+// PRIVATE handlers
 socket.on("private message", (msg) => {
   if (!msg) return;
   if (msg.self && msg.to) {
