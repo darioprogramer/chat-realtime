@@ -1,13 +1,17 @@
 const socket = io(); // conecta con el servidor
 
-const input = document.getElementById('input');
-const send = document.getElementById('send');
-const messages = document.getElementById('messages');
+// pedir nombre de usuario temporal
+let username = prompt("Ingresa tu nombre de usuario:");
+
+// elementos del DOM
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+const messages = document.getElementById("messages");
 
 // Enviar mensaje al servidor
 send.onclick = () => {
   if (input.value.trim()) {
-    socket.emit("chat message", input.value.trim());
+    socket.emit("chat message", { user: username, text: input.value.trim() });
     input.value = "";
   }
 };
@@ -15,8 +19,11 @@ send.onclick = () => {
 // Recibir mensajes en tiempo real
 socket.on("chat message", (msg) => {
   const div = document.createElement("div");
-  div.textContent = msg;
-  div.className = "msg other"; // puedes diferenciar según usuario
+  div.className = "msg other";
+  div.innerHTML = `
+    <span class="username">${msg.user}</span><br>
+    <span class="text">${msg.text}</span>
+  `;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 });
