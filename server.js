@@ -33,7 +33,8 @@ io.on("connection", (socket) => {
   console.log("Un usuario se conectó:", socket.id);
 
   socket.on("set username", (username) => {
-    // si ya existe otro socket con ese nombre, reemplazamos mapping
+    if (!username) return;
+    username = String(username).trim();
     users[socket.id] = { name: username, color: randomColor() };
     usersByName[username] = socket.id;
     io.emit("user list", Object.values(users));
@@ -60,29 +61,36 @@ io.on("connection", (socket) => {
   // PRIVATE text
   socket.on("private message", ({ to, text }) => {
     const fromUser = users[socket.id];
+    if (!fromUser || !to) return;
     const toSocketId = usersByName[to];
-    if (fromUser && toSocketId) {
-      // enviar solo al destinatario; no reenviamos la misma estructura al remitente
+    // enviar al destinatario
+    if (toSocketId) {
       io.to(toSocketId).emit("private message", { from: fromUser.name, text, color: fromUser.color });
     }
+    // enviar confirmación al remitente (self) con campo 'to' para que el cliente lo coloque en el chat correcto
+    socket.emit("private message", { to, text, color: fromUser.color, self: true });
   });
 
   // PRIVATE voice
   socket.on("private voice", ({ to, audio }) => {
     const fromUser = users[socket.id];
+    if (!fromUser || !to) return;
     const toSocketId = usersByName[to];
-    if (fromUser && toSocketId) {
+    if (toSocketId) {
       io.to(toSocketId).emit("private voice", { from: fromUser.name, audio, color: fromUser.color });
     }
+    socket.emit("private voice", { to, audio, color: fromUser.color, self: true });
   });
 
   // PRIVATE image
   socket.on("private image", ({ to, image }) => {
     const fromUser = users[socket.id];
+    if (!fromUser || !to) return;
     const toSocketId = usersByName[to];
-    if (fromUser && toSocketId) {
+    if (toSocketId) {
       io.to(toSocketId).emit("private image", { from: fromUser.name, image, color: fromUser.color });
     }
+    socket.emit("private image", { to, image, color: fromUser.color, self: true });
   });
 
   socket.on("disconnecting", () => {

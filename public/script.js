@@ -114,7 +114,7 @@ function renderMessages() {
 
 // administrar lista de chats en sidebar
 function addChatToList(name) {
-  if (name === username) return; // no crear chat contigo mismo
+  if (!name || name === username) return; // no crear chat contigo mismo ni vacíos
   if (document.querySelector(`#chatList li[data-chat="${CSS.escape(name)}"]`)) return;
   const li = document.createElement("li");
   li.className = "chat-item";
@@ -135,7 +135,6 @@ function openChat(name) {
   // on mobile hide sidebar and show chatWindow
   if (window.innerWidth <= 700) {
     app.classList.remove("show-sidebar");
-    // ensure chatWindow visible (CSS hides it when show-sidebar present)
     const chatWindow = document.getElementById("chatWindow");
     if (chatWindow) chatWindow.style.display = "flex";
   }
@@ -166,12 +165,11 @@ function ensureMobileStart() {
     if (chatWindow) chatWindow.style.display = "flex";
   }
 }
-ensureMobileStart();
+document.addEventListener("DOMContentLoaded", ensureMobileStart);
 window.addEventListener("resize", ensureMobileStart);
 
 sidebarToggle && sidebarToggle.addEventListener("click", () => {
   app.classList.toggle("show-sidebar");
-  // toggle chatWindow display accordingly
   const chatWindow = document.getElementById("chatWindow");
   if (app.classList.contains("show-sidebar")) {
     if (chatWindow) chatWindow.style.display = "none";
@@ -225,7 +223,7 @@ send.addEventListener("click", () => {
     chats.Global.push(entry);
     if (activeChat === "Global") renderMessages();
   } else {
-    // enviar privado: servidor enviará solo al destinatario
+    // enviar privado: servidor enviará al destinatario y confirmará al remitente
     socket.emit("private message", { to: activeChat, text });
     // añadir copia local en chat destino (optimista)
     const msg = { from: username, text, color: usersOnline[username]?.color, timestamp: Date.now() };
@@ -322,7 +320,7 @@ imageInput.addEventListener("change", () => {
 // lista de usuarios online
 socket.on("user list", (list) => {
   usersOnline = {};
-  list.forEach(u => { usersOnline[u.name] = u; });
+  list.forEach(u => { if (u && u.name) usersOnline[u.name] = u; });
   refreshUserSelect();
 
   // asegurar que chats existentes estén en la lista
@@ -371,8 +369,19 @@ socket.on("image message", (msg) => {
   if (activeChat === "Global") renderMessages();
 });
 
-// mensaje privado (recibido)
+// mensaje privado (recibido por destinatario)
 socket.on("private message", (msg) => {
+  // msg: { from, text, color }  OR confirmation to sender: { to, text, color, self:true }
+  if (msg.self && msg.to) {
+    // confirmation to sender: push into chats[msg.to]
+    const to = msg.to;
+    if (!chats[to]) chats[to] = [];
+    const entry = { from: username, text: msg.text, color: usersOnline[username]?.color, timestamp: Date.now() };
+    chats[to].push(entry);
+    if (activeChat === to) renderMessages();
+    return;
+  }
+
   const from = msg.from;
   if (from === username) return; // seguridad: no duplicar si por alguna razón llega tu propio nombre
   if (!chats[from]) {
@@ -386,6 +395,15 @@ socket.on("private message", (msg) => {
 
 // voz privada
 socket.on("private voice", (msg) => {
+  if (msg.self && msg.to) {
+    const to = msg.to;
+    if (!chats[to]) chats[to] = [];
+    const entry = { from: username, type: "voice", audio: msg.audio, color: usersOnline[username]?.color, timestamp: Date.now() };
+    chats[to].push(entry);
+    if (activeChat === to) renderMessages();
+    return;
+  }
+
   const from = msg.from;
   if (from === username) return;
   if (!chats[from]) {
@@ -399,6 +417,15 @@ socket.on("private voice", (msg) => {
 
 // imagen privada
 socket.on("private image", (msg) => {
+  if (msg.self && msg.to) {
+    const to = msg.to;
+    if (!chats[to]) chats[to] = [];
+    const entry = { from: username, type: "image", image: msg.image, color: usersOnline[username]?.color, timestamp: Date.now() };
+    chats[to].push(entry);
+    if (activeChat === to) renderMessages();
+    return;
+  }
+
   const from = msg.from;
   if (from === username) return;
   if (!chats[from]) {
