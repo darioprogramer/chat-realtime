@@ -67,7 +67,7 @@ io.on("connection", (socket) => {
     if (toSocketId) {
       io.to(toSocketId).emit("private message", { from: fromUser.name, text, color: fromUser.color });
     }
-    // enviar confirmación al remitente (self) con campo 'to' para que el cliente lo coloque en el chat correcto
+    // enviar confirmación al remitente (self) con campo 'to'
     socket.emit("private message", { to, text, color: fromUser.color, self: true });
   });
 

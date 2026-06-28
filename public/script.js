@@ -1,19 +1,5 @@
-// script.js - multi chats (Global + privados), base64 para audio e imagenes
+// script.js - cliente revisado: espera connect antes de pedir nombre, mobile fixes, no duplicados
 const socket = io();
-
-// pedir nombre de usuario obligatorio
-let username = "";
-while (!username) {
-  username = prompt("Ingresa tu nombre de usuario:");
-  if (username === null || username.trim() === "") {
-    alert("Debes ingresar un nombre para entrar al chat.");
-    username = "";
-  } else {
-    username = username.trim();
-  }
-}
-
-socket.emit("set username", username);
 
 // DOM
 const app = document.getElementById("app");
@@ -32,9 +18,11 @@ const userSelect = document.getElementById("userSelect");
 const currentUserSpan = document.getElementById("currentUser");
 
 // estado local
+let username = "";
 let usersOnline = {}; // name -> { name, color }
 let chats = { Global: [] }; // chatName -> [messages]
 let activeChat = "Global";
+let connected = false;
 
 // helpers
 function escapeHtml(str) {
@@ -112,9 +100,9 @@ function renderMessages() {
   renderParticipants(activeChat);
 }
 
-// administrar lista de chats en sidebar
+// administrar lista de chats en sidebar (delegación)
 function addChatToList(name) {
-  if (!name || name === username) return; // no crear chat contigo mismo ni vacíos
+  if (!name || name === username) return;
   if (document.querySelector(`#chatList li[data-chat="${CSS.escape(name)}"]`)) return;
   const li = document.createElement("li");
   li.className = "chat-item";
@@ -122,11 +110,11 @@ function addChatToList(name) {
   li.tabIndex = 0;
   li.innerHTML = `<span class="chat-emoji">💬</span><span class="chat-name">${escapeHtml(name)}</span>`;
   chatList.appendChild(li);
-  li.addEventListener("click", () => openChat(name));
-  li.addEventListener("keydown", (e) => { if (e.key === "Enter") openChat(name); });
 }
 
+// abrir chat
 function openChat(name) {
+  if (!name) return;
   activeChat = name;
   document.querySelectorAll("#chatList li").forEach(li => li.classList.remove("active"));
   const li = document.querySelector(`#chatList li[data-chat="${CSS.escape(name)}"]`);
@@ -153,8 +141,9 @@ function refreshUserSelect() {
   });
 }
 
-// eventos UI
-// show sidebar on mobile at start (ensures only chat list visible)
+// UI events
+
+// ensure mobile starts showing only sidebar (chat list)
 function ensureMobileStart() {
   const chatWindow = document.getElementById("chatWindow");
   if (window.innerWidth <= 700) {
@@ -179,10 +168,22 @@ sidebarToggle && sidebarToggle.addEventListener("click", () => {
 });
 
 backToChats && backToChats.addEventListener("click", () => {
-  // show sidebar to go back and hide chatWindow on mobile
   app.classList.add("show-sidebar");
   const chatWindow = document.getElementById("chatWindow");
   if (chatWindow && window.innerWidth <= 700) chatWindow.style.display = "none";
+});
+
+// Delegación de clicks en chatList (incluye Global)
+chatList.addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-chat]");
+  if (li) {
+    const name = li.dataset.chat;
+    openChat(name);
+  }
+});
+chatList.addEventListener("keydown", (e) => {
+  const li = e.target.closest("li[data-chat]");
+  if (li && e.key === "Enter") openChat(li.dataset.chat);
 });
 
 // buscar / crear chat con Enter
@@ -212,24 +213,14 @@ userSelect.addEventListener("change", () => {
   openChat(name);
 });
 
-// enviar texto (global o privado)
+// enviar texto (global o privado) - no optimistic push
 send.addEventListener("click", () => {
   const text = input.value.trim();
-  if (!text) return;
+  if (!text || !connected) return;
   if (activeChat === "Global") {
     socket.emit("chat message", { text });
-    // optimista: add local copy
-    const entry = { user: username, text, color: usersOnline[username]?.color, timestamp: Date.now() };
-    chats.Global.push(entry);
-    if (activeChat === "Global") renderMessages();
   } else {
-    // enviar privado: servidor enviará al destinatario y confirmará al remitente
     socket.emit("private message", { to: activeChat, text });
-    // añadir copia local en chat destino (optimista)
-    const msg = { from: username, text, color: usersOnline[username]?.color, timestamp: Date.now() };
-    if (!chats[activeChat]) chats[activeChat] = [];
-    chats[activeChat].push(msg);
-    renderMessages();
   }
   input.value = "";
 });
@@ -259,17 +250,11 @@ record.addEventListener("click", async () => {
         const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
         const reader = new FileReader();
         reader.onload = () => {
+          if (!connected) return;
           if (activeChat === "Global") {
             socket.emit("voice message", { audio: reader.result });
-            const entry = { user: username, type: "voice", audio: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
-            chats.Global.push(entry);
-            if (activeChat === "Global") renderMessages();
           } else {
             socket.emit("private voice", { to: activeChat, audio: reader.result });
-            const msg = { from: username, type: "voice", audio: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
-            if (!chats[activeChat]) chats[activeChat] = [];
-            chats[activeChat].push(msg);
-            renderMessages();
           }
         };
         reader.readAsDataURL(audioBlob);
@@ -289,7 +274,7 @@ record.addEventListener("click", async () => {
 // ENVIAR IMAGEN (base64)
 imageInput.addEventListener("change", () => {
   const file = imageInput.files[0];
-  if (!file) return;
+  if (!file || !connected) return;
   const maxSize = 8 * 1024 * 1024;
   if (file.size > maxSize) {
     alert("La imagen es demasiado grande. Máx 8 MB.");
@@ -300,15 +285,8 @@ imageInput.addEventListener("change", () => {
   reader.onload = () => {
     if (activeChat === "Global") {
       socket.emit("image message", { image: reader.result });
-      const entry = { user: username, type: "image", image: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
-      chats.Global.push(entry);
-      if (activeChat === "Global") renderMessages();
     } else {
       socket.emit("private image", { to: activeChat, image: reader.result });
-      const msg = { from: username, type: "image", image: reader.result, color: usersOnline[username]?.color, timestamp: Date.now() };
-      if (!chats[activeChat]) chats[activeChat] = [];
-      chats[activeChat].push(msg);
-      renderMessages();
     }
     imageInput.value = "";
   };
@@ -316,6 +294,31 @@ imageInput.addEventListener("change", () => {
 });
 
 // SOCKET events
+
+// Conexión: pedir username aquí para asegurar mapping en servidor
+socket.on("connect", () => {
+  connected = true;
+  console.log("Socket conectado:", socket.id);
+
+  // pedir nombre de usuario obligatorio (ahora que estamos conectados)
+  if (!username) {
+    while (!username) {
+      const n = prompt("Ingresa tu nombre de usuario:");
+      if (n === null) {
+        // si cancela, usar un anon con timestamp
+        username = `Anon-${Math.floor(Math.random()*1000)}`;
+        break;
+      }
+      if (n.trim() === "") {
+        alert("Debes ingresar un nombre para entrar al chat.");
+        continue;
+      }
+      username = n.trim();
+    }
+    socket.emit("set username", username);
+    if (currentUserSpan) currentUserSpan.textContent = username;
+  }
+});
 
 // lista de usuarios online
 socket.on("user list", (list) => {
@@ -345,8 +348,9 @@ function refreshUserSelect() {
   });
 }
 
-// mensaje global
+// mensaje global (servidor emite a todos, incluido remitente)
 socket.on("chat message", (msg) => {
+  if (!msg || !msg.user) return;
   const entry = { user: msg.user, text: msg.text, color: msg.color, timestamp: Date.now() };
   if (!chats.Global) chats.Global = [];
   chats.Global.push(entry);
@@ -355,6 +359,7 @@ socket.on("chat message", (msg) => {
 
 // voz global
 socket.on("voice message", (msg) => {
+  if (!msg || !msg.user) return;
   const entry = { user: msg.user, type: "voice", audio: msg.audio, color: msg.color, timestamp: Date.now() };
   if (!chats.Global) chats.Global = [];
   chats.Global.push(entry);
@@ -363,27 +368,30 @@ socket.on("voice message", (msg) => {
 
 // imagen global
 socket.on("image message", (msg) => {
+  if (!msg || !msg.user) return;
   const entry = { user: msg.user, type: "image", image: msg.image, color: msg.color, timestamp: Date.now() };
   if (!chats.Global) chats.Global = [];
   chats.Global.push(entry);
   if (activeChat === "Global") renderMessages();
 });
 
-// mensaje privado (recibido por destinatario)
+// mensaje privado (recibido por destinatario OR confirmation to sender with self:true)
 socket.on("private message", (msg) => {
-  // msg: { from, text, color }  OR confirmation to sender: { to, text, color, self:true }
+  if (!msg) return;
+
+  // confirmation to sender: { to, text, color, self:true }
   if (msg.self && msg.to) {
-    // confirmation to sender: push into chats[msg.to]
     const to = msg.to;
     if (!chats[to]) chats[to] = [];
-    const entry = { from: username, text: msg.text, color: usersOnline[username]?.color, timestamp: Date.now() };
+    const entry = { from: username, text: msg.text, color: msg.color, timestamp: Date.now() };
     chats[to].push(entry);
     if (activeChat === to) renderMessages();
     return;
   }
 
   const from = msg.from;
-  if (from === username) return; // seguridad: no duplicar si por alguna razón llega tu propio nombre
+  if (!from) return;
+  if (from === username) return; // safety
   if (!chats[from]) {
     chats[from] = [];
     addChatToList(from);
@@ -395,16 +403,19 @@ socket.on("private message", (msg) => {
 
 // voz privada
 socket.on("private voice", (msg) => {
+  if (!msg) return;
+
   if (msg.self && msg.to) {
     const to = msg.to;
     if (!chats[to]) chats[to] = [];
-    const entry = { from: username, type: "voice", audio: msg.audio, color: usersOnline[username]?.color, timestamp: Date.now() };
+    const entry = { from: username, type: "voice", audio: msg.audio, color: msg.color, timestamp: Date.now() };
     chats[to].push(entry);
     if (activeChat === to) renderMessages();
     return;
   }
 
   const from = msg.from;
+  if (!from) return;
   if (from === username) return;
   if (!chats[from]) {
     chats[from] = [];
@@ -417,16 +428,19 @@ socket.on("private voice", (msg) => {
 
 // imagen privada
 socket.on("private image", (msg) => {
+  if (!msg) return;
+
   if (msg.self && msg.to) {
     const to = msg.to;
     if (!chats[to]) chats[to] = [];
-    const entry = { from: username, type: "image", image: msg.image, color: usersOnline[username]?.color, timestamp: Date.now() };
+    const entry = { from: username, type: "image", image: msg.image, color: msg.color, timestamp: Date.now() };
     chats[to].push(entry);
     if (activeChat === to) renderMessages();
     return;
   }
 
   const from = msg.from;
+  if (!from) return;
   if (from === username) return;
   if (!chats[from]) {
     chats[from] = [];
@@ -437,13 +451,8 @@ socket.on("private image", (msg) => {
   if (activeChat === from) renderMessages();
 });
 
-// conexión
-socket.on("connect", () => {
-  console.log("Socket conectado:", socket.id);
-  if (currentUserSpan) currentUserSpan.textContent = username;
-});
-
 // desconexión
 socket.on("disconnect", (reason) => {
+  connected = false;
   console.log("Socket desconectado:", reason);
 });
