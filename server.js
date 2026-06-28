@@ -48,10 +48,11 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 📷 recibir mensajes de imagen
+  // 📷 recibir mensajes de imagen (corregido)
   socket.on("image message", (msg) => {
     const userData = users[socket.id];
     if (userData) {
+      // retransmitir la imagen tal cual (base64), sin convertir a Buffer
       io.emit("image message", { user: userData.name, image: msg.image, color: userData.color });
     }
   });
