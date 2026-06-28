@@ -1,4 +1,4 @@
-// server.js
+// server.js - mantiene confirmaciones self:true para privados
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -63,11 +63,10 @@ io.on("connection", (socket) => {
     const fromUser = users[socket.id];
     if (!fromUser || !to) return;
     const toSocketId = usersByName[to];
-    // enviar al destinatario
     if (toSocketId) {
       io.to(toSocketId).emit("private message", { from: fromUser.name, text, color: fromUser.color });
     }
-    // enviar confirmación al remitente (self) con campo 'to'
+    // confirm to sender
     socket.emit("private message", { to, text, color: fromUser.color, self: true });
   });
 

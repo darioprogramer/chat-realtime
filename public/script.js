@@ -1,4 +1,4 @@
-// script.js - cliente revisado: espera connect antes de pedir nombre, mobile fixes, no duplicados
+// script.js - imágenes comprimidas cliente, audios robustos, no duplicados
 const socket = io();
 
 // DOM
@@ -17,14 +17,15 @@ const imageInput = document.getElementById("imageInput");
 const userSelect = document.getElementById("userSelect");
 const currentUserSpan = document.getElementById("currentUser");
 
-// estado local
+// estado
 let username = "";
-let usersOnline = {}; // name -> { name, color }
-let chats = { Global: [] }; // chatName -> [messages]
+let usersOnline = {};
+let chats = { Global: [] };
 let activeChat = "Global";
 let connected = false;
+let isProcessingMedia = false;
 
-// helpers
+// util
 function escapeHtml(str) {
   return String(str || "")
     .replace(/&/g, "&amp;")
@@ -33,12 +34,10 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
 function appendElement(el) {
   messages.appendChild(el);
   messages.scrollTop = messages.scrollHeight;
 }
-
 function renderParticipants(name) {
   if (name === "Global") {
     const count = Object.keys(usersOnline).length;
@@ -50,7 +49,6 @@ function renderParticipants(name) {
     chatParticipants.textContent = `${username} ${meOnline} · ${other} ${otherOnline}`;
   }
 }
-
 function renderMessages() {
   messages.innerHTML = "";
   const list = chats[activeChat] || [];
@@ -100,7 +98,7 @@ function renderMessages() {
   renderParticipants(activeChat);
 }
 
-// administrar lista de chats en sidebar (delegación)
+// sidebar / chats
 function addChatToList(name) {
   if (!name || name === username) return;
   if (document.querySelector(`#chatList li[data-chat="${CSS.escape(name)}"]`)) return;
@@ -111,8 +109,6 @@ function addChatToList(name) {
   li.innerHTML = `<span class="chat-emoji">💬</span><span class="chat-name">${escapeHtml(name)}</span>`;
   chatList.appendChild(li);
 }
-
-// abrir chat
 function openChat(name) {
   if (!name) return;
   activeChat = name;
@@ -120,7 +116,6 @@ function openChat(name) {
   const li = document.querySelector(`#chatList li[data-chat="${CSS.escape(name)}"]`);
   if (li) li.classList.add("active");
   renderMessages();
-  // on mobile hide sidebar and show chatWindow
   if (window.innerWidth <= 700) {
     app.classList.remove("show-sidebar");
     const chatWindow = document.getElementById("chatWindow");
@@ -128,22 +123,7 @@ function openChat(name) {
   }
 }
 
-// actualizar select de usuarios online
-function refreshUserSelect() {
-  userSelect.innerHTML = '<option value="">Selecciona un usuario</option>';
-  Object.values(usersOnline).forEach(u => {
-    if (u.name === username) return;
-    const opt = document.createElement("option");
-    opt.value = u.name;
-    opt.textContent = u.name;
-    opt.style.color = u.color || "#000";
-    userSelect.appendChild(opt);
-  });
-}
-
 // UI events
-
-// ensure mobile starts showing only sidebar (chat list)
 function ensureMobileStart() {
   const chatWindow = document.getElementById("chatWindow");
   if (window.innerWidth <= 700) {
@@ -166,27 +146,23 @@ sidebarToggle && sidebarToggle.addEventListener("click", () => {
     if (chatWindow) chatWindow.style.display = "flex";
   }
 });
-
 backToChats && backToChats.addEventListener("click", () => {
   app.classList.add("show-sidebar");
   const chatWindow = document.getElementById("chatWindow");
   if (chatWindow && window.innerWidth <= 700) chatWindow.style.display = "none";
 });
 
-// Delegación de clicks en chatList (incluye Global)
+// delegation for chat list
 chatList.addEventListener("click", (e) => {
   const li = e.target.closest("li[data-chat]");
-  if (li) {
-    const name = li.dataset.chat;
-    openChat(name);
-  }
+  if (li) openChat(li.dataset.chat);
 });
 chatList.addEventListener("keydown", (e) => {
   const li = e.target.closest("li[data-chat]");
   if (li && e.key === "Enter") openChat(li.dataset.chat);
 });
 
-// buscar / crear chat con Enter
+// search/create chat
 searchUser.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
     const name = searchUser.value.trim();
@@ -202,21 +178,18 @@ searchUser.addEventListener("keydown", (e) => {
     searchUser.value = "";
   }
 });
-
-// seleccionar usuario del select crea/abre chat
 userSelect.addEventListener("change", () => {
   const name = userSelect.value;
-  if (!name) return;
-  if (name === username) return;
+  if (!name || name === username) return;
   if (!chats[name]) chats[name] = [];
   addChatToList(name);
   openChat(name);
 });
 
-// enviar texto (global o privado) - no optimistic push
+// send text (no optimistic push)
 send.addEventListener("click", () => {
   const text = input.value.trim();
-  if (!text || !connected) return;
+  if (!text || !connected || isProcessingMedia) return;
   if (activeChat === "Global") {
     socket.emit("chat message", { text });
   } else {
@@ -224,8 +197,6 @@ send.addEventListener("click", () => {
   }
   input.value = "";
 });
-
-// Enter para enviar (sin Shift)
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -233,11 +204,88 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-// GRABAR AUDIO (base64)
+// --- IMAGE: compress and send ---
+async function compressImageFile(file, maxDim = 1024, quality = 0.75) {
+  // use createImageBitmap for async decode
+  const bitmap = await createImageBitmap(file);
+  let { width, height } = bitmap;
+  const ratio = width / height;
+  if (width > maxDim || height > maxDim) {
+    if (ratio > 1) {
+      width = maxDim;
+      height = Math.round(maxDim / ratio);
+    } else {
+      height = maxDim;
+      width = Math.round(maxDim * ratio);
+    }
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  // release bitmap
+  bitmap.close && bitmap.close();
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob);
+    }, "image/jpeg", quality);
+  });
+}
+
+imageInput.addEventListener("change", async () => {
+  const file = imageInput.files[0];
+  if (!file || !connected || isProcessingMedia) {
+    imageInput.value = "";
+    return;
+  }
+  isProcessingMedia = true;
+  disableControls(true);
+  try {
+    // limit file size early
+    const maxSizeBytes = 12 * 1024 * 1024; // 12MB original limit
+    if (file.size > maxSizeBytes) {
+      // try compressing; compressImageFile will reduce dimensions/quality
+    }
+    const compressedBlob = await compressImageFile(file, 1024, 0.75);
+    // final size check
+    const finalMax = 10 * 1024 * 1024;
+    if (compressedBlob.size > finalMax) {
+      alert("La imagen sigue siendo muy grande después de comprimir. Elige otra más pequeña.");
+      imageInput.value = "";
+      return;
+    }
+    // read as dataURL asynchronously
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      if (activeChat === "Global") {
+        socket.emit("image message", { image: dataUrl });
+      } else {
+        socket.emit("private image", { to: activeChat, image: dataUrl });
+      }
+      imageInput.value = "";
+    };
+    reader.onerror = () => {
+      console.error("Error leyendo la imagen");
+      imageInput.value = "";
+    };
+    reader.readAsDataURL(compressedBlob);
+  } catch (err) {
+    console.error("Error procesando imagen:", err);
+    alert("No se pudo procesar la imagen.");
+  } finally {
+    isProcessingMedia = false;
+    disableControls(false);
+  }
+});
+
+// --- AUDIO: record and send robustly ---
 let mediaRecorder;
 let audioChunks = [];
 
 record.addEventListener("click", async () => {
+  if (isProcessingMedia) return;
   try {
     if (!mediaRecorder || mediaRecorder.state === "inactive") {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -246,18 +294,29 @@ record.addEventListener("click", async () => {
       mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) audioChunks.push(e.data);
       };
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (!connected) return;
-          if (activeChat === "Global") {
-            socket.emit("voice message", { audio: reader.result });
-          } else {
-            socket.emit("private voice", { to: activeChat, audio: reader.result });
-          }
-        };
-        reader.readAsDataURL(audioBlob);
+      mediaRecorder.onstop = async () => {
+        isProcessingMedia = true;
+        disableControls(true);
+        try {
+          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+          // optional: if you want to limit size, you could transcode or slice
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = reader.result;
+            if (activeChat === "Global") {
+              socket.emit("voice message", { audio: dataUrl });
+            } else {
+              socket.emit("private voice", { to: activeChat, audio: dataUrl });
+            }
+          };
+          reader.onerror = () => console.error("Error leyendo audio");
+          reader.readAsDataURL(audioBlob);
+        } catch (err) {
+          console.error("Error procesando audio:", err);
+        } finally {
+          isProcessingMedia = false;
+          disableControls(false);
+        }
       };
       mediaRecorder.start();
       record.textContent = "⏹️";
@@ -271,41 +330,32 @@ record.addEventListener("click", async () => {
   }
 });
 
-// ENVIAR IMAGEN (base64)
-imageInput.addEventListener("change", () => {
-  const file = imageInput.files[0];
-  if (!file || !connected) return;
-  const maxSize = 8 * 1024 * 1024;
-  if (file.size > maxSize) {
-    alert("La imagen es demasiado grande. Máx 8 MB.");
-    imageInput.value = "";
-    return;
+// disable/enable controls while processing
+function disableControls(disable) {
+  send.disabled = disable;
+  record.disabled = disable;
+  imageInput.disabled = disable;
+  searchUser.disabled = disable;
+  userSelect.disabled = disable;
+  if (disable) {
+    // subtle visual feedback
+    send.style.opacity = "0.6";
+    record.style.opacity = "0.6";
+  } else {
+    send.style.opacity = "";
+    record.style.opacity = "";
   }
-  const reader = new FileReader();
-  reader.onload = () => {
-    if (activeChat === "Global") {
-      socket.emit("image message", { image: reader.result });
-    } else {
-      socket.emit("private image", { to: activeChat, image: reader.result });
-    }
-    imageInput.value = "";
-  };
-  reader.readAsDataURL(file);
-});
+}
 
-// SOCKET events
-
-// Conexión: pedir username aquí para asegurar mapping en servidor
+// SOCKET events & connection
 socket.on("connect", () => {
   connected = true;
   console.log("Socket conectado:", socket.id);
-
-  // pedir nombre de usuario obligatorio (ahora que estamos conectados)
+  // ask username only after connected
   if (!username) {
     while (!username) {
       const n = prompt("Ingresa tu nombre de usuario:");
       if (n === null) {
-        // si cancela, usar un anon con timestamp
         username = `Anon-${Math.floor(Math.random()*1000)}`;
         break;
       }
@@ -320,22 +370,14 @@ socket.on("connect", () => {
   }
 });
 
-// lista de usuarios online
 socket.on("user list", (list) => {
   usersOnline = {};
   list.forEach(u => { if (u && u.name) usersOnline[u.name] = u; });
   refreshUserSelect();
-
-  // asegurar que chats existentes estén en la lista
-  Object.keys(chats).forEach(name => {
-    if (name !== "Global") addChatToList(name);
-  });
-
-  // actualizar participantes si estás en un chat privado
+  Object.keys(chats).forEach(name => { if (name !== "Global") addChatToList(name); });
   renderParticipants(activeChat);
 });
 
-// actualizar select de usuarios online
 function refreshUserSelect() {
   userSelect.innerHTML = '<option value="">Selecciona un usuario</option>';
   Object.values(usersOnline).forEach(u => {
@@ -348,7 +390,7 @@ function refreshUserSelect() {
   });
 }
 
-// mensaje global (servidor emite a todos, incluido remitente)
+// GLOBAL handlers
 socket.on("chat message", (msg) => {
   if (!msg || !msg.user) return;
   const entry = { user: msg.user, text: msg.text, color: msg.color, timestamp: Date.now() };
@@ -356,8 +398,6 @@ socket.on("chat message", (msg) => {
   chats.Global.push(entry);
   if (activeChat === "Global") renderMessages();
 });
-
-// voz global
 socket.on("voice message", (msg) => {
   if (!msg || !msg.user) return;
   const entry = { user: msg.user, type: "voice", audio: msg.audio, color: msg.color, timestamp: Date.now() };
@@ -365,8 +405,6 @@ socket.on("voice message", (msg) => {
   chats.Global.push(entry);
   if (activeChat === "Global") renderMessages();
 });
-
-// imagen global
 socket.on("image message", (msg) => {
   if (!msg || !msg.user) return;
   const entry = { user: msg.user, type: "image", image: msg.image, color: msg.color, timestamp: Date.now() };
@@ -375,11 +413,9 @@ socket.on("image message", (msg) => {
   if (activeChat === "Global") renderMessages();
 });
 
-// mensaje privado (recibido por destinatario OR confirmation to sender with self:true)
+// PRIVATE handlers (recipient and sender confirmation)
 socket.on("private message", (msg) => {
   if (!msg) return;
-
-  // confirmation to sender: { to, text, color, self:true }
   if (msg.self && msg.to) {
     const to = msg.to;
     if (!chats[to]) chats[to] = [];
@@ -388,23 +424,15 @@ socket.on("private message", (msg) => {
     if (activeChat === to) renderMessages();
     return;
   }
-
   const from = msg.from;
-  if (!from) return;
-  if (from === username) return; // safety
-  if (!chats[from]) {
-    chats[from] = [];
-    addChatToList(from);
-  }
+  if (!from || from === username) return;
+  if (!chats[from]) { chats[from] = []; addChatToList(from); }
   const entry = { from: msg.from, text: msg.text, color: msg.color, timestamp: Date.now() };
   chats[from].push(entry);
   if (activeChat === from) renderMessages();
 });
-
-// voz privada
 socket.on("private voice", (msg) => {
   if (!msg) return;
-
   if (msg.self && msg.to) {
     const to = msg.to;
     if (!chats[to]) chats[to] = [];
@@ -413,23 +441,15 @@ socket.on("private voice", (msg) => {
     if (activeChat === to) renderMessages();
     return;
   }
-
   const from = msg.from;
-  if (!from) return;
-  if (from === username) return;
-  if (!chats[from]) {
-    chats[from] = [];
-    addChatToList(from);
-  }
+  if (!from || from === username) return;
+  if (!chats[from]) { chats[from] = []; addChatToList(from); }
   const entry = { from: msg.from, type: "voice", audio: msg.audio, color: msg.color, timestamp: Date.now() };
   chats[from].push(entry);
   if (activeChat === from) renderMessages();
 });
-
-// imagen privada
 socket.on("private image", (msg) => {
   if (!msg) return;
-
   if (msg.self && msg.to) {
     const to = msg.to;
     if (!chats[to]) chats[to] = [];
@@ -438,20 +458,14 @@ socket.on("private image", (msg) => {
     if (activeChat === to) renderMessages();
     return;
   }
-
   const from = msg.from;
-  if (!from) return;
-  if (from === username) return;
-  if (!chats[from]) {
-    chats[from] = [];
-    addChatToList(from);
-  }
+  if (!from || from === username) return;
+  if (!chats[from]) { chats[from] = []; addChatToList(from); }
   const entry = { from: msg.from, type: "image", image: msg.image, color: msg.color, timestamp: Date.now() };
   chats[from].push(entry);
   if (activeChat === from) renderMessages();
 });
 
-// desconexión
 socket.on("disconnect", (reason) => {
   connected = false;
   console.log("Socket desconectado:", reason);
