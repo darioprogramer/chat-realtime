@@ -41,7 +41,7 @@ socket.on("chat message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// actualizar lista de usuarios conectados
+// actualizar lista de usuarios conectados en tiempo real
 socket.on("user list", (users) => {
   userSelect.innerHTML = ""; // limpiar
   users.forEach((u) => {

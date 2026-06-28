@@ -30,7 +30,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Un usuario se desconectó");
-    delete users[socket.id];
+    delete users[socket.id]; // eliminar del listado
     io.emit("user list", Object.values(users)); // actualizar lista
   });
 });
