@@ -9,6 +9,7 @@ const io = new Server(server);
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
+  // 🔑 Usa minúscula porque en Linux/Render es sensible
   res.sendFile(__dirname + "/public/Index.html");
 });
 
@@ -47,6 +48,14 @@ io.on("connection", (socket) => {
     }
   });
 
+  // 📷 recibir mensajes de imagen
+  socket.on("image message", (msg) => {
+    const userData = users[socket.id];
+    if (userData) {
+      io.emit("image message", { user: userData.name, image: msg.image, color: userData.color });
+    }
+  });
+
   socket.on("disconnecting", () => {
     delete users[socket.id];
   });
@@ -60,11 +69,4 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-// recibir mensajes de imagen
-socket.on("image message", (msg) => {
-  const userData = users[socket.id];
-  if (userData) {
-    io.emit("image message", { user: userData.name, image: msg.image, color: userData.color });
-  }
 });
