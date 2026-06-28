@@ -11,7 +11,7 @@ app.use(express.static("public"));
 
 // ruta principal: servir index.html
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+  res.sendFile(__dirname + "/public/Index.html");
 });
 
 // socket.io
