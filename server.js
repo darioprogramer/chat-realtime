@@ -21,7 +21,8 @@ io.on("connection", (socket) => {
   // recibir nombre de usuario
   socket.on("set username", (username) => {
     users[socket.id] = username;
-    io.emit("user list", Object.values(users)); // enviar lista actualizada
+    // enviar lista actualizada a TODOS
+    io.emit("user list", Object.values(users));
   });
 
   socket.on("chat message", (msg) => {
@@ -30,8 +31,9 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Un usuario se desconectó");
-    delete users[socket.id]; // eliminar del listado
-    io.emit("user list", Object.values(users)); // actualizar lista
+    delete users[socket.id];
+    // enviar lista actualizada a TODOS
+    io.emit("user list", Object.values(users));
   });
 });
 
