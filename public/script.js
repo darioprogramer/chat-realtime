@@ -31,7 +31,7 @@ send.onclick = () => {
   }
 };
 
-// 🎤 grabar audio
+// 🎤 grabar audio (corregido a base64)
 let mediaRecorder;
 let audioChunks = [];
 
@@ -47,7 +47,7 @@ record.onclick = async () => {
       reader.onload = () => {
         socket.emit("voice message", { user: username, audio: reader.result });
       };
-      reader.readAsArrayBuffer(audioBlob);
+      reader.readAsDataURL(audioBlob); // ✅ usar base64
     };
     mediaRecorder.start();
     record.textContent = "⏹️";
@@ -57,16 +57,16 @@ record.onclick = async () => {
   }
 };
 
-// 📷 enviar imagen (corregido)
+// 📷 enviar imagen (corregido a base64)
 imageInput.onchange = () => {
   const file = imageInput.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = () => {
       socket.emit("image message", { user: username, image: reader.result });
-      imageInput.value = ""; // 🔑 limpiar input para permitir nuevas fotos
+      imageInput.value = ""; // limpiar input
     };
-    reader.readAsDataURL(file); // usar base64 en lugar de ArrayBuffer
+    reader.readAsDataURL(file); // ✅ usar base64
   }
 };
 
@@ -82,15 +82,13 @@ socket.on("chat message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Recibir mensajes de voz
+// Recibir mensajes de voz (corregido para base64)
 socket.on("voice message", (msg) => {
   const div = document.createElement("div");
   div.className = `voice-message ${msg.user === username ? "mine" : "other"}`;
-  const audioBlob = new Blob([msg.audio], { type: "audio/webm" });
-  const audioURL = URL.createObjectURL(audioBlob);
   div.innerHTML = `
     <span class="username" style="color:${msg.color}">${msg.user}</span>
-    <audio controls src="${audioURL}"></audio>
+    <audio controls src="${msg.audio}"></audio>
   `;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
