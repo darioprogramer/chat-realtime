@@ -31,7 +31,7 @@ send.onclick = () => {
   }
 };
 
-// 🎤 grabar audio (corregido a base64)
+// 🎤 grabar audio (base64)
 let mediaRecorder;
 let audioChunks = [];
 
@@ -57,7 +57,7 @@ record.onclick = async () => {
   }
 };
 
-// 📷 enviar imagen (corregido a base64)
+// 📷 enviar imagen (base64)
 imageInput.onchange = () => {
   const file = imageInput.files[0];
   if (file) {
@@ -82,7 +82,7 @@ socket.on("chat message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Recibir mensajes de voz (corregido para base64)
+// Recibir mensajes de voz (base64)
 socket.on("voice message", (msg) => {
   const div = document.createElement("div");
   div.className = `voice-message ${msg.user === username ? "mine" : "other"}`;
@@ -94,7 +94,7 @@ socket.on("voice message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Recibir mensajes de imagen (corregido para base64)
+// Recibir mensajes de imagen (base64)
 socket.on("image message", (msg) => {
   const div = document.createElement("div");
   div.className = `image-message ${msg.user === username ? "mine" : "other"}`;
