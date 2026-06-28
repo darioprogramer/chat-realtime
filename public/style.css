@@ -1,12 +1,16 @@
 body {
   font-family: Arial, sans-serif;
   background: #ece5dd;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 }
 
+/* bloque de chat normal (desktop) */
 #chat {
   width: 400px;
   height: 500px;
@@ -18,6 +22,7 @@ body {
   flex-direction: column;
 }
 
+/* título */
 h2 {
   background: #075e54;
   color: white;
@@ -85,35 +90,24 @@ h2 {
   cursor: pointer;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* 🔑 Adaptación para móviles */
 @media (max-width: 600px) {
   body {
-    background: #fff;       /* fondo blanco, sin espacios extra */
+    background: #fff;       /* fondo blanco */
     margin: 0;
     padding: 0;
-    display: block;         /* quitar flexbox que centraba */
+    display: block;         /* quitar flexbox */
     height: 100vh;
     width: 100vw;
   }
 
   #chat {
-    width: 100vw;           /* ocupa todo el ancho de la pantalla */
-    height: 100vh;          /* ocupa toda la altura visible */
+    width: 100vw;           /* ocupa todo el ancho */
+    height: 100vh;          /* ocupa toda la altura */
     border-radius: 0;       /* sin bordes redondeados */
     box-shadow: none;       /* sin sombra */
+    margin: 0;              /* sin márgenes */
+
   }
 
   h2 {
