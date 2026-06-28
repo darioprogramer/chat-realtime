@@ -98,33 +98,31 @@ h2 {
 
 
 
-
-
-/* Estilos generales (ya los tienes arriba) */
-
 /* 🔑 Adaptación para móviles */
 @media (max-width: 600px) {
   body {
-    background: #fff;            /* fondo blanco, sin distracciones */
-    height: auto;                /* que no dependa de 100vh */
+    background: #fff;       /* fondo blanco, sin espacios extra */
     margin: 0;
     padding: 0;
+    display: block;         /* quitar flexbox que centraba */
+    height: 100vh;
+    width: 100vw;
   }
 
   #chat {
-    width: 100%;                 /* ocupa todo el ancho */
-    height: 100vh;               /* ocupa toda la altura visible */
-    border-radius: 0;            /* sin bordes redondeados */
-    box-shadow: none;            /* sin sombra */
+    width: 100vw;           /* ocupa todo el ancho de la pantalla */
+    height: 100vh;          /* ocupa toda la altura visible */
+    border-radius: 0;       /* sin bordes redondeados */
+    box-shadow: none;       /* sin sombra */
   }
 
   h2 {
-    font-size: 18px;             /* título más compacto */
+    font-size: 18px;
     padding: 8px;
   }
 
   #messages {
-    font-size: 14px;             /* texto más legible en móvil */
+    font-size: 14px;
   }
 
   #input {
