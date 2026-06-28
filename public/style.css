@@ -84,3 +84,56 @@ h2 {
   padding: 10px;
   cursor: pointer;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Estilos generales (ya los tienes arriba) */
+
+/* 🔑 Adaptación para móviles */
+@media (max-width: 600px) {
+  body {
+    background: #fff;            /* fondo blanco, sin distracciones */
+    height: auto;                /* que no dependa de 100vh */
+    margin: 0;
+    padding: 0;
+  }
+
+  #chat {
+    width: 100%;                 /* ocupa todo el ancho */
+    height: 100vh;               /* ocupa toda la altura visible */
+    border-radius: 0;            /* sin bordes redondeados */
+    box-shadow: none;            /* sin sombra */
+  }
+
+  h2 {
+    font-size: 18px;             /* título más compacto */
+    padding: 8px;
+  }
+
+  #messages {
+    font-size: 14px;             /* texto más legible en móvil */
+  }
+
+  #input {
+    font-size: 14px;
+    min-height: 35px;
+  }
+
+  #send {
+    font-size: 14px;
+    padding: 8px;
+  }
+}
