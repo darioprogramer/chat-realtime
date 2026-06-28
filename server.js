@@ -61,3 +61,10 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+// recibir mensajes de imagen
+socket.on("image message", (msg) => {
+  const userData = users[socket.id];
+  if (userData) {
+    io.emit("image message", { user: userData.name, image: msg.image, color: userData.color });
+  }
+});

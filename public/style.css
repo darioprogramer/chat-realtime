@@ -7,8 +7,6 @@
 body {
   font-family: Arial, sans-serif;
   background: #ece5dd;
-  margin: 0;
-  padding: 0;
   height: 100vh;
   width: 100vw;
   display: flex;
@@ -16,7 +14,7 @@ body {
   align-items: center;
 }
 
-/* bloque de chat normal (desktop) */
+/* Contenedor principal */
 #chat {
   width: 400px;
   height: 500px;
@@ -31,7 +29,7 @@ body {
   flex-direction: column;
 }
 
-/* título */
+/* Título */
 h2 {
   background: #075e54;
   color: white;
@@ -40,6 +38,7 @@ h2 {
   text-align: center;
 }
 
+/* Área de mensajes */
 #messages {
   flex: 1;
   overflow-y: auto;
@@ -50,12 +49,14 @@ h2 {
   background-size: cover;
 }
 
+/* Mensajes de texto */
 .msg {
-  margin: 5px 0;
+  margin: 6px 0;
   padding: 8px;
-  border-radius: 5px;
-  max-width: 70%;
+  border-radius: 8px;
+  max-width: 75%;
   word-wrap: break-word;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
 .mine {
@@ -69,8 +70,9 @@ h2 {
 }
 
 .username {
-  color: red;
   font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 4px;
   display: block;
 }
 
@@ -78,9 +80,13 @@ h2 {
   margin-left: 5px;
 }
 
+/* Formulario */
 #form {
   display: flex;
   border-top: 1px solid #ddd;
+  padding: 5px;
+  gap: 5px;
+  align-items: stretch; /* 🔑 todos los hijos igual de altos */
 }
 
 #input {
@@ -88,26 +94,35 @@ h2 {
   padding: 10px;
   border: none;
   resize: none;
-  min-height: 40px;
-  max-height: 100px;
-  overflow-y: auto;
   font-family: inherit;
+  border-radius: 6px;
 }
 
-#send {
+/* Botones compactos con misma altura que textarea */
+#send, #record, #imageInput {
   background: #25d366;
   color: white;
   border: none;
-  padding: 10px;
   cursor: pointer;
+  border-radius: 6px;
   transition: background 0.3s, color 0.3s;
+  font-size: 16px;
+  width: 40px;   /* ancho fijo */
+  text-align: center;
 }
 
-#send:hover {
-  color: #001109;
+#send:hover, #record:hover, #imageInput:hover {
   background: #167c3b;
 }
 
+/* Input de imagen con icono */
+#imageInput {
+  background: #25d366 url('images/icon-image.png') center/18px no-repeat;
+  text-indent: -9999px; /* oculta el texto "Elegir archivo" */
+  overflow: hidden;
+}
+
+/* Label animada */
 .Label1 {
   margin-left: 1vw;
   color: rgb(0, 250, 54);
@@ -116,36 +131,30 @@ h2 {
 }
 
 @keyframes Label1 {
-  0% {
-    color: rgb(0, 255, 55);
-    text-shadow: 0px 0px 3px #001109;
-  }
-  50% {
-    color: rgb(0, 53, 7);
-    text-shadow: 0px 0px 3px rgb(0, 250, 54);
-  }
-  100% {
-    color: rgb(0, 250, 54);
-    text-shadow: 0px 0px 3px #001109;
-  }
+  0% { color: rgb(0, 255, 55); }
+  50% { color: rgb(0, 53, 7); }
+  100% { color: rgb(0, 250, 54); }
 }
 
+/* Selector de usuarios */
 #userSelect {
   background-color: rgb(200, 255, 178);
+  border-radius: 6px;
+  padding: 4px;
 }
 
 #userSelect:focus {
   box-shadow: 0px 0px 3px #51ff00ef;
 }
 
-/* 🎤 Estilo para mensajes de voz */
+/* 🎤 Mensajes de voz */
 .voice-message {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   background: #f9f9f9;
   border: 1px solid #ddd;
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 8px;
   margin: 6px 0;
   max-width: 80%;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -163,28 +172,58 @@ h2 {
 
 .voice-message .username {
   font-weight: bold;
-  margin-right: 10px;
+  margin-bottom: 5px;
   font-size: 14px;
 }
 
 .voice-message audio {
   width: 100%;
   max-width: 250px;
-  outline: none;
   border-radius: 8px;
+}
+
+/* 📷 Mensajes de imagen */
+.image-message {
+  display: flex;
+  flex-direction: column;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 8px;
+  margin: 6px 0;
+  max-width: 80%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.image-message.mine {
+  background: #dcf8c6;
+  margin-left: auto;
+}
+
+.image-message.other {
+  background: #fff;
+  margin-right: auto;
+}
+
+.image-message .username {
+  font-weight: bold;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.chat-image {
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.chat-image:hover {
+  transform: scale(1.03);
 }
 
 /* 🔑 Adaptación para móviles */
 @media (max-width: 500px) {
-  body {
-    background: #fff;
-    margin: 0;
-    padding: 0;
-    display: block;
-    height: 100vh;
-    width: 100vw;
-  }
-
   #chat {
     width: 100vw;
     height: 100vh;
@@ -204,19 +243,18 @@ h2 {
 
   #input {
     font-size: 14px;
-    min-height: 35px;
   }
 
-  #send {
-    font-size: 14px;
-    padding: 8px;
+  #send, #record, #imageInput {
+    width: 36px;
+    font-size: 12px;
   }
 
-  .voice-message {
-    max-width: 95%; /* más ancho en móvil */
+  .voice-message, .image-message {
+    max-width: 95%;
   }
 
   .voice-message audio {
-    max-width: 100%; /* ocupa todo el ancho disponible */
+    max-width: 100%;
   }
 }

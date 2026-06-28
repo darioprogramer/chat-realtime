@@ -19,8 +19,9 @@ socket.emit("set username", username);
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const record = document.getElementById("record");
+const imageInput = document.getElementById("imageInput");
 const messages = document.getElementById("messages");
-const userSelect = document.getElementById("userSelect"); // desplegable
+const userSelect = document.getElementById("userSelect");
 
 // Enviar mensaje de texto
 send.onclick = () => {
@@ -49,10 +50,22 @@ record.onclick = async () => {
       reader.readAsArrayBuffer(audioBlob);
     };
     mediaRecorder.start();
-    record.textContent = "⏹️"; // botón cambia a stop
+    record.textContent = "⏹️";
   } else {
     mediaRecorder.stop();
-    record.textContent = "🎤"; // vuelve a micrófono
+    record.textContent = "🎤";
+  }
+};
+
+// 📷 enviar imagen
+imageInput.onchange = () => {
+  const file = imageInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      socket.emit("image message", { user: username, image: reader.result });
+    };
+    reader.readAsArrayBuffer(file);
   }
 };
 
@@ -68,7 +81,7 @@ socket.on("chat message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Recibir mensajes de voz con estilo visual
+// Recibir mensajes de voz
 socket.on("voice message", (msg) => {
   const div = document.createElement("div");
   div.className = `voice-message ${msg.user === username ? "mine" : "other"}`;
@@ -82,13 +95,27 @@ socket.on("voice message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// actualizar lista de usuarios conectados en tiempo real
+// Recibir mensajes de imagen
+socket.on("image message", (msg) => {
+  const div = document.createElement("div");
+  div.className = `image-message ${msg.user === username ? "mine" : "other"}`;
+  const imgBlob = new Blob([msg.image]);
+  const imgURL = URL.createObjectURL(imgBlob);
+  div.innerHTML = `
+    <span class="username" style="color:${msg.color}">${msg.user}</span><br>
+    <img src="${imgURL}" alt="imagen" class="chat-image">
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+});
+
+// actualizar lista de usuarios conectados
 socket.on("user list", (users) => {
-  userSelect.innerHTML = ""; // limpiar
+  userSelect.innerHTML = "";
   users.forEach((u) => {
     const option = document.createElement("option");
     option.textContent = u.name;
-    option.style.color = u.color; // aplicar color en el desplegable
+    option.style.color = u.color;
     userSelect.appendChild(option);
   });
 });
@@ -100,6 +127,5 @@ input.addEventListener("keydown", (e) => {
       e.preventDefault();
       send.click();
     }
-    // Enter solo = salto de línea normal
   }
 });
