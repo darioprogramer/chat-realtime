@@ -34,7 +34,7 @@ socket.on("chat message", (msg) => {
   const div = document.createElement("div");
   div.className = msg.user === username ? "msg mine" : "msg other";
   div.innerHTML = `
-    <span class="username">${msg.user}</span><br>
+    <span class="username" style="color:${msg.color}">${msg.user}</span><br>
     <span class="text">${msg.text}</span>
   `;
   messages.appendChild(div);
@@ -46,7 +46,8 @@ socket.on("user list", (users) => {
   userSelect.innerHTML = ""; // limpiar
   users.forEach((u) => {
     const option = document.createElement("option");
-    option.textContent = u;
+    option.textContent = u.name;
+    option.style.color = u.color; // aplicar color en el desplegable
     userSelect.appendChild(option);
   });
 });

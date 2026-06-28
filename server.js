@@ -9,31 +9,40 @@ const io = new Server(server);
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/Index.html");
+  res.sendFile(__dirname + "/public/index.html");
 });
 
-// objeto para guardar usuarios conectados
+// objeto para guardar usuarios conectados con color
 let users = {};
+
+// función para generar un color aleatorio
+function randomColor() {
+  const colors = ["red", "blue", "green", "purple", "orange", "brown", "teal", "magenta"];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
 
 io.on("connection", (socket) => {
   console.log("Un usuario se conectó");
 
-  // recibir nombre de usuario
   socket.on("set username", (username) => {
-    users[socket.id] = username;
-    // enviar lista actualizada a TODOS
-    io.emit("user list", Object.values(users));
+    users[socket.id] = { name: username, color: randomColor() };
+    io.emit("user list", Object.values(users)); // enviar lista actualizada
   });
 
   socket.on("chat message", (msg) => {
-    io.emit("chat message", msg);
+    const userData = users[socket.id];
+    if (userData) {
+      io.emit("chat message", { user: userData.name, text: msg.text, color: userData.color });
+    }
+  });
+
+  socket.on("disconnecting", () => {
+    delete users[socket.id];
   });
 
   socket.on("disconnect", () => {
     console.log("Un usuario se desconectó");
-    delete users[socket.id];
-    // enviar lista actualizada a TODOS
-    io.emit("user list", Object.values(users));
+    io.emit("user list", Object.values(users)); // actualizar lista
   });
 });
 
