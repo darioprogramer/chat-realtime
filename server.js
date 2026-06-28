@@ -17,7 +17,7 @@ let users = {};
 
 // función para generar un color aleatorio
 function randomColor() {
-  const colors = ["red", "blue", "green", "purple", "orange", "brown", "teal", "magenta"];
+  const colors = ["rgba(72, 255, 0, 0.94)", "#ffee00ef", "#ff0000ef", "#00fff2ef", "#1100ffef", "#ff00ffef", "#ff4f7bef", "#e1ff5bef","#747474ef"];
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
