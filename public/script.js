@@ -57,15 +57,16 @@ record.onclick = async () => {
   }
 };
 
-// 📷 enviar imagen
+// 📷 enviar imagen (corregido)
 imageInput.onchange = () => {
   const file = imageInput.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = () => {
       socket.emit("image message", { user: username, image: reader.result });
+      imageInput.value = ""; // 🔑 limpiar input para permitir nuevas fotos
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataURL(file); // usar base64 en lugar de ArrayBuffer
   }
 };
 
@@ -95,15 +96,13 @@ socket.on("voice message", (msg) => {
   messages.scrollTop = messages.scrollHeight;
 });
 
-// Recibir mensajes de imagen
+// Recibir mensajes de imagen (corregido para base64)
 socket.on("image message", (msg) => {
   const div = document.createElement("div");
   div.className = `image-message ${msg.user === username ? "mine" : "other"}`;
-  const imgBlob = new Blob([msg.image]);
-  const imgURL = URL.createObjectURL(imgBlob);
   div.innerHTML = `
     <span class="username" style="color:${msg.color}">${msg.user}</span><br>
-    <img src="${imgURL}" alt="imagen" class="chat-image">
+    <img src="${msg.image}" alt="imagen" class="chat-image">
   `;
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
