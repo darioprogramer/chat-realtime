@@ -9,7 +9,7 @@ const io = new Server(server);
 app.use(express.static("public"));
 
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+  res.sendFile(__dirname + "/public/Index.html");
 });
 
 // objeto para guardar usuarios conectados
