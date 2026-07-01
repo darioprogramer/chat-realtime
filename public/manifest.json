@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "dir": "auto",
+  "display": "standalone",
+  "name": "Chat Realtime",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "chatRealtime",
+  "start_url": "/Index.html",
+  "theme_color": "#000000",
+  "id": "chatRealtime"
+}
