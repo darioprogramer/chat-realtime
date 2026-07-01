@@ -1,29 +1,20 @@
 {
-  "background_color": "#ffffff",
-  "dir": "auto",
-  "display": "standalone",
-  "name": "Chat Realtime",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "chatRealtime",
-  "start_url": "/Index.html",
-  "theme_color": "#000000",
-  "id": "chatRealtime"
-
-
-
+  "short_name": "CR-DFL",
+  "name": "Chat Realtime DFL",
   "icons": [
-  {
-    "src": "icons/android/launchericon-192x192.png",
-    "sizes": "192x192",
-    "type": "image/png"
-  },
-  {
-    "src": "icons/android/launchericon-512x512.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  }
-]
-
+    {
+      "src": "icons/android/launchericon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/android/launchericon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/https://chat-realtime-uru8.onrender.com",
+  "display": "standalone",
+  "theme_color": "black",
+  "background_color": "white"
 }
-
