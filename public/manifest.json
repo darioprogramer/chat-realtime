@@ -2,7 +2,7 @@
   "short_name": "CR-DFL",
   "name": "Chat Realtime DFL",
 
-  "start_url": "/index.html",
+  "start_url": "https://chat-realtime-1-784r.onrender.com",
   "display": "fullscreen",
   "theme_color": "#000000",
   "background_color": "#FFFFFF",
