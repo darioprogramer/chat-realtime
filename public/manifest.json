@@ -1,6 +1,15 @@
 {
   "short_name": "CR-DFL",
   "name": "Chat Realtime DFL",
+
+  "start_url": "/",
+  "display": "fullscreen",
+  "theme_color": "#000000",
+  "background_color": "#FFFFFF",
+
+
+
+  
   "icons": [
     {
       "src": "icons/android/launchericon-192x192.png",
@@ -12,9 +21,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "start_url": "https://chat-realtime-uru8.onrender.com",
-  "display": "fullscreen",
-  "theme_color": "black",
-  "background_color": "white"
+  ]
+
 }
