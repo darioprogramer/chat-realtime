@@ -14,7 +14,7 @@
     }
   ],
   "start_url": "https://chat-realtime-uru8.onrender.com",
-  "display": "standalone",
+  "display": "fullscreen",
   "theme_color": "black",
   "background_color": "white"
 }
