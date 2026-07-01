@@ -480,3 +480,16 @@ socket.on("disconnect", (reason) => {
   connected = false;
   console.log("Socket desconectado:", reason);
 });
+
+
+
+
+
+
+
+
+
+
+if (screen.orientation && screen.orientation.lock) {
+  screen.orientation.lock("portrait").catch(err => console.log(err));
+}
