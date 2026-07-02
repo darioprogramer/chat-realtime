@@ -14,8 +14,14 @@ const io = new Server(server, {
 
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use((req,res,next)=>{
+    res.setHeader("Cache-Control","no-cache");
+    next();
+});
+
+
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "/Index.html"));
+  res.sendFile(path.join(__dirname, "public", "/index.html"));
 });
 
 let users = {};        // socketId -> { name, color }
