@@ -3,7 +3,7 @@
   "short_name": "CR-DFL",
   "description": "Chat Realtime DFL",
 
-  "start_url": "/",
+  "start_url": "/Index.html",
   "scope": "/",
 
   "display": "fullscreen",
